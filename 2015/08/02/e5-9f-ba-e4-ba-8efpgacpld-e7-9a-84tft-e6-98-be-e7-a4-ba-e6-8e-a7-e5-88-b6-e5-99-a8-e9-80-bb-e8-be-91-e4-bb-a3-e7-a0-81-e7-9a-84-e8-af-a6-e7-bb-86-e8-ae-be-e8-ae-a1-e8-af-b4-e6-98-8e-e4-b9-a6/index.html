@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>基于FPGA/CPLD + SDRAM 的TFT液晶控制器(lcd controller)逻辑代码的详细设计说明书 | hex55</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="先看看两张效果图吧,手机拍摄效果差于实际效果。
+
+
+看看NES游戏的《坦克世界》，^_^
+
+
+
+TFT控制器用户手册 - 副本
+项目背景及开发目的目前市面上各种TFT显示专用控制器价格相对较为高昂，且存在以下缺点：
+
+通常TFT控制芯片成本在 22~33 RMB区间。
+支持的显示分辨率通常在800&amp;#42;480以内，而在分辨率为800&amp;#42;480时能刷新率却不能满足要求(&amp;lt;24fps">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于FPGA/CPLD + SDRAM 的TFT液晶控制器(lcd controller)逻辑代码的详细设计说明书">
+<meta property="og:url" content="http://hex55.com/2015/08/02/e5-9f-ba-e4-ba-8efpgacpld-e7-9a-84tft-e6-98-be-e7-a4-ba-e6-8e-a7-e5-88-b6-e5-99-a8-e9-80-bb-e8-be-91-e4-bb-a3-e7-a0-81-e7-9a-84-e8-af-a6-e7-bb-86-e8-ae-be-e8-ae-a1-e8-af-b4-e6-98-8e-e4-b9-a6/index.html">
+<meta property="og:site_name" content="hex55">
+<meta property="og:description" content="先看看两张效果图吧,手机拍摄效果差于实际效果。
+
+
+看看NES游戏的《坦克世界》，^_^
+
+
+
+TFT控制器用户手册 - 副本
+项目背景及开发目的目前市面上各种TFT显示专用控制器价格相对较为高昂，且存在以下缺点：
+
+通常TFT控制芯片成本在 22~33 RMB区间。
+支持的显示分辨率通常在800&amp;#42;480以内，而在分辨率为800&amp;#42;480时能刷新率却不能满足要求(&amp;lt;24fps">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/tft1.jpg">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/tft0.jpg">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/tft2.jpg">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/tft3.jpg">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/tft4.jpg">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/fpga_sram.jpg">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/fpga_sdr.jpg">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/tftCtrTop.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/all.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/usrBus.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrBlock.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdr_init.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrPwrDown.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdr_clkSuspend.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdr_autoRef.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrSelfRef.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrReadWithout.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrRead.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrSReadWithout.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrSRead.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrAlteraBankR.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrReadDQM.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrReadPage.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrWriteWithout.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrWrite.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrSWriteWithout.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrSWrite.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrAlteraBankW.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrWriteDQM.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrWritePage.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdr_interface.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdr_pinDef.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdr_block.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdr_ctrlInterface.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdr_ctrCmd.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/sdrCtrlData.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/tftCtrl.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/tftCtrlState.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/tft_hv.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/tft_de.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/tft_drv.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/led_pwm.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/06/clk_rst.png">
+<meta property="og:updated_time" content="2016-07-30T01:59:15.697Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="基于FPGA/CPLD + SDRAM 的TFT液晶控制器(lcd controller)逻辑代码的详细设计说明书">
+<meta name="twitter:description" content="先看看两张效果图吧,手机拍摄效果差于实际效果。
+
+
+看看NES游戏的《坦克世界》，^_^
+
+
+
+TFT控制器用户手册 - 副本
+项目背景及开发目的目前市面上各种TFT显示专用控制器价格相对较为高昂，且存在以下缺点：
+
+通常TFT控制芯片成本在 22~33 RMB区间。
+支持的显示分辨率通常在800&amp;#42;480以内，而在分辨率为800&amp;#42;480时能刷新率却不能满足要求(&amp;lt;24fps">
+<meta name="twitter:image" content="http://hex55.com/uploads/2015/06/tft1.jpg">
+  
+    <link rel="alternative" href="/atom.xml" title="hex55" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.png">
+  
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  
+  
+      <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  
+  <!-- 加载特效 -->
+    <script src="/js/pace.js"></script>
+    <link href="/css/pace/pace-theme-flash.css" rel="stylesheet" />
+  <script>
+      var yiliaConfig = {
+          fancybox: true,
+          animate: false,
+          isHome: false,
+          isPost: true,
+          isArchive: false,
+          isTag: false,
+          isCategory: false,
+          open_in_new: false
+      }
+  </script>
+</head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+    <header id="header" class="inner">
+        <a href="/" class="profilepic">
+            
+            <img src="/img/head.jpg" class="js-avatar" style="width: 100%;height: 100%;opacity: 1;">
+            
+        </a>
+
+        <hgroup>
+          <h1 class="header-author"><a href="/">shawge</a></h1>
+        </hgroup>
+
+        
+        <p class="header-subtitle">shawge的电子技术分享</p>
+        
+        
+        
+            <div id="switch-btn" class="switch-btn">
+                <div class="icon">
+                    <div class="icon-ctn">
+                        <div class="icon-wrap icon-house" data-idx="0">
+                            <div class="birdhouse"></div>
+                            <div class="birdhouse_holes"></div>
+                        </div>
+                        <div class="icon-wrap icon-ribbon hide" data-idx="1">
+                            <div class="ribbon"></div>
+                        </div>
+                        
+                        
+                        <div class="icon-wrap icon-me hide" data-idx="3">
+                            <div class="user"></div>
+                            <div class="shoulder"></div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="tips-box hide">
+                    <div class="tips-arrow"></div>
+                    <ul class="tips-inner">
+                        <li>菜单</li>
+                        <li>标签</li>
+                        
+                        
+                        <li>关于我</li>
+                        
+                    </ul>
+                </div>
+            </div>
+        
+
+        <div id="switch-area" class="switch-area">
+            <div class="switch-wrap">
+                <section class="switch-part switch-part1">
+                    <nav class="header-menu">
+                        <ul>
+                        
+                            <li><a href="/">博客首页</a></li>
+                        
+                            <li><a href="/categories/MCU-ARM/">MCU/ARM</a></li>
+                        
+                            <li><a href="/categories/FPGA/">FPGA</a></li>
+                        
+                            <li><a href="/categories/windows-linux/">WINDOWS/LINUX</a></li>
+                        
+                            <li><a href="/categories/硬件设计/">硬件设计</a></li>
+                        
+                            <li><a href="/archives/">归档</a></li>
+                        
+                        </ul>
+                    </nav>
+                    <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fl mail" target="_blank" href="http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=27O_o_7um6qq9bi0tg" title="mail">mail</a>
+                            
+                                <a class="fl rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+                            
+                        </ul>
+                    </nav>
+                </section>
+                
+                
+                <section class="switch-part switch-part2">
+                    <div class="widget tagcloud" id="js-tagcloud">
+                        <a href="/tags/github-提速/" style="font-size: 10px;">github 提速</a>
+                    </div>
+                </section>
+                
+                
+                
+
+                
+                
+                <section class="switch-part switch-part3">
+                
+                    <div id="js-aboutme">没想好。。。</div>
+                </section>
+                
+            </div>
+        </div>
+    </header>                
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+      <div class="overlay">
+          <div class="slider-trigger"></div>
+          <h1 class="header-author js-mobile-header hide"><a href="/" title="回到主页">shawge</a></h1>
+      </div>
+    <div class="intrude-less">
+        <header id="header" class="inner">
+            <a href="/" class="profilepic">
+                
+                    <img src="/img/head.jpg" class="js-avatar" style="width: 100%; height: 100%; opacity: 1;">
+                
+            </a>
+            <hgroup>
+              <h1 class="header-author"><a href="/" title="回到主页">shawge</a></h1>
+            </hgroup>
+            
+            <p class="header-subtitle">shawge的电子技术分享</p>
+            
+            <nav class="header-menu">
+                <ul>
+                
+                    <li><a href="/">博客首页</a></li>
+                
+                    <li><a href="/categories/MCU-ARM/">MCU/ARM</a></li>
+                
+                    <li><a href="/categories/FPGA/">FPGA</a></li>
+                
+                    <li><a href="/categories/windows-linux/">WINDOWS/LINUX</a></li>
+                
+                    <li><a href="/categories/硬件设计/">硬件设计</a></li>
+                
+                    <li><a href="/archives/">归档</a></li>
+                
+                <div class="clearfix"></div>
+                </ul>
+            </nav>
+            <nav class="header-nav">
+                <div class="social">
+                    
+                        <a class="mail" target="_blank" href="http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=27O_o_7um6qq9bi0tg" title="mail">mail</a>
+                    
+                        <a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+                    
+                </div>
+            </nav>
+        </header>                
+    </div>
+</nav>
+      <div class="body-wrap"><article id="post-e5-9f-ba-e4-ba-8efpgacpld-e7-9a-84tft-e6-98-be-e7-a4-ba-e6-8e-a7-e5-88-b6-e5-99-a8-e9-80-bb-e8-be-91-e4-bb-a3-e7-a0-81-e7-9a-84-e8-af-a6-e7-bb-86-e8-ae-be-e8-ae-a1-e8-af-b4-e6-98-8e-e4-b9-a6" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2015/08/02/e5-9f-ba-e4-ba-8efpgacpld-e7-9a-84tft-e6-98-be-e7-a4-ba-e6-8e-a7-e5-88-b6-e5-99-a8-e9-80-bb-e8-be-91-e4-bb-a3-e7-a0-81-e7-9a-84-e8-af-a6-e7-bb-86-e8-ae-be-e8-ae-a1-e8-af-b4-e6-98-8e-e4-b9-a6/" class="article-date">
+      <time datetime="2015-08-02T08:38:04.000Z" itemprop="datePublished">2015-08-02</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      基于FPGA/CPLD + SDRAM 的TFT液晶控制器(lcd controller)逻辑代码的详细设计说明书
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/FPGA/">FPGA</a>
+    </div>
+
+
+        
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+          
+        <hr>
+<p>先看看两张效果图吧,<strong>手机拍摄效果差于实际效果</strong>。</p>
+<p><img src="/uploads/2015/06/tft1.jpg" alt=""></p>
+<p><img src="/uploads/2015/06/tft0.jpg" alt=""></p>
+<p>看看NES游戏的《坦克世界》，^_^</p>
+<p><img src="/uploads/2015/06/tft2.jpg" alt=""></p>
+<p><img src="/uploads/2015/06/tft3.jpg" alt=""></p>
+<p><img src="/uploads/2015/06/tft4.jpg" alt=""></p>
+<p><a href="http://120.24.164.199
+/uploads/2015/06/TFT控制器用户手册-副本.pdf" target="_blank" rel="external">TFT控制器用户手册 - 副本</a></p>
+<h2 id="项目背景及开发目的"><a href="#项目背景及开发目的" class="headerlink" title="项目背景及开发目的"></a>项目背景及开发目的</h2><p>目前市面上各种TFT显示专用控制器价格相对较为高昂，且存在以下缺点：</p>
+<ul>
+<li>通常TFT控制芯片成本在 22~33 RMB区间。</li>
+<li>支持的显示分辨率通常在800&#42;480以内，而在分辨率为800&#42;480时能刷新率却不能满足要求(&lt;24fps/s)，有闪烁感。</li>
+<li>支持的显存容量有限，如通常为一页或两页显存，不利于进行较为高级的UI混合渲染。</li>
+<li>支持的外部存储容量有限，在显示界面较多时存储不了所需的UI图片资源。</li>
+<li>通常只支持HV模式、DE模式，而不支持高分辨率TFT屏所带的LVDS、MIPI接口。</li>
+<li>各TFT控制芯片的接口和寄存器互异，配置寄存器繁多，操作繁复。</li>
+<li>部分TFT控制芯片开发资料少，规格书内容不详细，开发需要厂商FAE支持，而厂商FAE支持力度不太到位。</li>
+<li>部分TFT控制芯片标称的技术性能指标与实际值不一致，导致项目临时换方案。</li>
+</ul>
+<p>由于以上这些原因，为了满足我司TFT相关产品的不同需求，工程师选取了多种TFT控制器方案，这不利于技术复用和维护，直接增加了开发工程师和测试工程师的工作量，同时还在一定程度上增加了项目的开发风险。<br>本设计的目的就在于实现成本控制和技术指标设计两方面的灵活性，增强技术的复用，降低开发难度，简化设计和维护成本，降低开发工程师和测试工程师的工作量，同时减少项目风险。</p>
+<h2 id="项目需求及设计指标"><a href="#项目需求及设计指标" class="headerlink" title="项目需求及设计指标"></a>项目需求及设计指标</h2><ul>
+<li>样品成本在20 RMB左右，批量成本 <strong>15RMB </strong>以下。</li>
+<li>分辨率支持 <strong>1024&#42;768</strong>及以下。</li>
+<li>支持<strong>16bit、24bit</strong>真彩色。</li>
+<li>支持多页缓存（对于800*480分辨率支持8页），显示页和读写页互相独立。</li>
+<li>用户读写最大带宽<strong>50M&#42;16bit（或50M&#42;24bit）</strong>。</li>
+<li><strong>16bit\24bit</strong>位宽的<strong>8080或6800</strong>并行接口。</li>
+<li>支持<strong>HV、DE</strong>模式，同时可扩展支持<strong>VGA、LVDS、MIPI DSI</strong>接口。</li>
+<li>支持<strong>0~16（或更高）</strong>级分辨率的背光控制。</li>
+<li>支持画面<strong>水平和垂直显示镜像</strong>。</li>
+<li><strong>支持指定区域突发读写</strong>，即只需要指定一次操作矩形区，X、Y坐标即可自动增长，无需重复发送坐标位置。</li>
+</ul>
+<h2 id="项目方案选型（参考了ZLG的相关文档）"><a href="#项目方案选型（参考了ZLG的相关文档）" class="headerlink" title="项目方案选型（参考了ZLG的相关文档）"></a>项目方案选型（参考了ZLG的相关文档）</h2><h3 id="1-基于CPLD-SRAM的方案。"><a href="#1-基于CPLD-SRAM的方案。" class="headerlink" title="1. 基于CPLD + SRAM的方案。"></a><strong>1. 基于CPLD + SRAM的方案。</strong></h3><p>该方案采用性价比较高的CPLD(如EMP240、A3P030 nano)和SRAM来实现，不仅成本低，而且灵活性非常大，实现的功能丰富，由于采用性价比较低的SRAM，容量有限，适合于低分辨率的TFT屏显示。</p>
+<p><img src="/uploads/2015/06/fpga_sram.jpg" alt=""></p>
+<p>功能特点：</p>
+<ol>
+<li>采用altera的EPM240或Microsemi小容量的A3P030以及SRAM来实现，具有成本低的特点。</li>
+<li>开发方案简单，工程量小，技术难度低。</li>
+<li>接口非常灵活，根据不同的需要可以定制8080并行总线接口、6800并行总线接口等。</li>
+<li>并行总线接口的速度最高可达25MHz左右，相当于480×272分辨率的TFT在1秒钟内可以更新191副图片。</li>
+<li>支持双缓存的操作，两个缓存都可进行读写的操作。</li>
+<li>支持定点和区域更新内容。</li>
+<li>支持16位色480×272以及以下分辨率的TFT显示屏，刷新率在60Hz以上。</li>
+<li>显示数据来源于MCU，数据可以存放于外部的串行或并行的Flash，可以存放图片、汉字库等，容量大小由用户自行控制。</li>
+</ol>
+<p>缺点：<strong>由于SRAM成本较高，在高分辨率时整体硬件成本会明显增加</strong></p>
+<h3 id="2-基于FPGA-SDRAM的方案"><a href="#2-基于FPGA-SDRAM的方案" class="headerlink" title="2. 基于FPGA + SDRAM的方案"></a><strong>2. 基于FPGA + SDRAM的方案</strong></h3><p>该方案采用Lattice LCMXO2-1200（或Microsemi的A3P060）和SDRAM的方式实现，同样成本低，由于Microsemi资源较为丰富，并且内部带有PLL，所以可以实现高分率的TFT显示，最高可达1024×768。<br><img src="/uploads/2015/06/fpga_sdr.jpg" alt=""><br>功能特点：</p>
+<ol>
+<li>采用Lattice的Lattice LCMXO2-1200（或Microsemi的A3P060）以及SDRAM来实现，具有成本低的特点。</li>
+<li>接口非常灵活，根据不同的需要可以定制8080并行总线接口、6800并行总线接口等。</li>
+<li>并行总线接口的速度最高可达50MHz左右，相当于800×600分辨率的TFT在1秒钟内可以更新100副图片</li>
+<li>支持8页缓存（可采用更大容量的SDRAM来实现更多的缓存页）的操作，8个缓存都可进行读写的操作。</li>
+<li>支持定点和区域更新内容</li>
+<li>支持16位色1024×768以及以下分辨率的TFT显示屏，刷新率在60Hz以上</li>
+<li>显示数据来源于MCU，数据可以存放于外部的串行或并行的Flash，可以存放图片、汉字库等，容量大小由用户自行控制。</li>
+</ol>
+<p>缺点：<strong>SDRAM存储器由于其自身特性时序相对较为复制，开发技术难度大</strong>。</p>
+<h2 id="控制器总体设计"><a href="#控制器总体设计" class="headerlink" title="控制器总体设计"></a>控制器总体设计</h2><h3 id="TFT控制器接口设计及PIN定义说明"><a href="#TFT控制器接口设计及PIN定义说明" class="headerlink" title="TFT控制器接口设计及PIN定义说明"></a>TFT控制器接口设计及PIN定义说明</h3><p><img src="/uploads/2015/06/tftCtrTop.png" alt=""></p>
+<p>TFT控制器的电气符号如上图，该接口各个PIN定义如下：<br><strong>clk</strong> —— 输入，控制器时钟，频率10M</p>
+<p><strong>nRst</strong> —— 输入，控制器外部复位，低电平有效</p>
+<p><strong>dataUsr[15..0]</strong> —— 三态双向IO，8080总线数据线</p>
+<p><strong>cs</strong> —— 输入，8080总线片选，低电平有效</p>
+<p><strong>rs</strong> —— 输入，8080总线寄存器地址与寄存器数据选择，rs为低表示数据线上呈现的是寄存器地址，rs为高表示数据线上呈现的是寄存器数据</p>
+<p><strong>wr</strong> —— 输入，8080总线写使能，低电平有效</p>
+<p><strong>rd</strong> —— 输入， 8080总线读使能，低电平有效</p>
+<p><strong>clkTft</strong> —— 输出，TFT模组的时钟</p>
+<p><strong>vs</strong> —— 输出，TFT模组的场信号</p>
+<p><strong>hs</strong> —— 输出，TFT模组的行信号</p>
+<p><strong>de</strong> —— 输出，TFT模组的时钟信号</p>
+<p><strong>rDataTft[4..0]</strong> —— 输出，TFT模组的R通道信号，5位</p>
+<p><strong>gDataTft[5..0]</strong> —— 输出， TFT模组的G通信信号，6位</p>
+<p><strong>bDataTft[4..0]</strong> —— 输出， TFT模组的B通信信号，5位</p>
+<p><strong>lrTft</strong> —— 输出，TFT模组水平扫描方向信号</p>
+<p><strong>udTft</strong> —— 输出，TFT模组垂直扫描方向信号</p>
+<p><strong>modeTft</strong> —— 输出，TFT模组行场模式、DE模式选择信号</p>
+<p><strong>ledTft</strong> —— 输出，TFT模组背光PWM控制信号</p>
+<p><strong>clkSdr</strong> —— 输出，SDRAM时钟信号</p>
+<p><strong>ckeSdr</strong> —— 输出， SDRAM时钟使能信号</p>
+<p><strong>nCsSdr</strong> —— 输出，SDRAM片选信号</p>
+<p><strong>nCasSdr</strong> —— 输出，SDRAM列地址有效信号</p>
+<p><strong>nRasSdr</strong> —— 输出， SDRAM行地址有效信号</p>
+<p><strong>dqmSdr[1..0]</strong> —— 输出，SDRAM掩码信号</p>
+<p><strong>baSdr[1..0]</strong> —— 输出，SDRAM的BANK地址信号</p>
+<p><strong>addrSdr[12..00]</strong> —— 输出，SDRAM的地址线</p>
+<p><strong>dataSdr[15..0]</strong> —— 三态双向IO，SDRAM的数据线</p>
+<p>###控制器总体设计框图</p>
+<p>整体设计框图如下,图中各模块功能分别如为：</p>
+<ul>
+<li><strong>MCU_FPGA总线接口模块</strong>——实现用户数据的同步和用户命令的解析。</li>
+<li><strong>SDRAM控制器</strong>——实现SDRAM的初始化、自动刷新，自动预充电，数据读写操作相关时序。</li>
+<li><strong>TFT_CTRL控制核心模块</strong>——实现用户读写SDRAM、TFT时序控制器读取SDRAM的协同，对SDRAM的总带宽进行分配。</li>
+<li><strong>TFT时序控制器</strong>——实现TFT显示模组的行场或DE同步刷新时序，并将显示数据呈现到TFT显示模组上。</li>
+<li><strong>TFT背光PWM控制模块</strong>——实现TFT模组LED背光亮度的控制。</li>
+<li><strong>时钟生成与系统复位控制模块</strong>——实现各个模块所需时钟的生成，以及产生稳定可靠的复位信号</li>
+</ul>
+<p><img src="/uploads/2015/06/all.png" alt=""></p>
+<h2 id="控制器模块详细设计说明"><a href="#控制器模块详细设计说明" class="headerlink" title="控制器模块详细设计说明"></a>控制器模块详细设计说明</h2><h3 id="MCU-FPGA总线接口模块"><a href="#MCU-FPGA总线接口模块" class="headerlink" title="MCU_FPGA总线接口模块"></a>MCU_FPGA总线接口模块</h3><p><img src="/uploads/2015/06/usrBus.png" alt=""></p>
+<h3 id="SDRAM控制器（参考了ALTERA《SDR-SDRAM-Controller》白皮书）"><a href="#SDRAM控制器（参考了ALTERA《SDR-SDRAM-Controller》白皮书）" class="headerlink" title="SDRAM控制器（参考了ALTERA《SDR SDRAM Controller》白皮书）"></a>SDRAM控制器（参考了ALTERA《SDR SDRAM Controller》白皮书）</h3><h4 id="SDRAM架构框图及原理"><a href="#SDRAM架构框图及原理" class="headerlink" title="SDRAM架构框图及原理"></a>SDRAM架构框图及原理</h4><p><img src="/uploads/2015/06/sdrBlock.png" alt=""></p>
+<p>关于SDRAM原理详情，请参见<a href="http://wenku.baidu.com/view/63c8f94f767f5acfa1c7cde5.html" target="_blank" rel="external">《高手进阶，终极内存技术指南》</a>一文。</p>
+<h4 id="SDRAM时序"><a href="#SDRAM时序" class="headerlink" title="SDRAM时序"></a>SDRAM时序</h4><ul>
+<li><strong>SDRAM初始化时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdr_init.png" alt=""></p>
+<p>在SDRAM初始化阶段，主要用于配置SDRAM的突发模式，突发顺序，潜伏期等参数。</p>
+<ul>
+<li><strong>SDRAM掉电模式时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdrPwrDown.png" alt=""></p>
+<p>在掉电模式下SDRAM将进入低功耗状态，但处在该模式下的时长不能超过64ms的刷新周期，否则数据将丢失。</p>
+<ul>
+<li><strong>SDRAM时钟挂起模式时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdr_clkSuspend.png" alt=""></p>
+<p>在时钟挂起模式下，将会关闭SDRAM内部的时步逻辑，SDRAM不再响应任何组合命令，SDRAM数据线上的数据也将被屏蔽。</p>
+<ul>
+<li><strong>SDRAM自动刷新时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdr_autoRef.png" alt=""></p>
+<p>因为SDRAM内部的BANK是电容式的，最大只能保持64ms，因此每行存储单元必须在64ms内执行一次自动刷新。</p>
+<ul>
+<li><strong>SDRAM自刷新模式时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdrSelfRef.png" alt=""></p>
+<p>Self Refresh。这种mode的功耗在1mA以下。在这种状态下，SDRAM芯片自己完成refresh的操作，不需要SDRAM controller的干涉（Auto refresh需要）。既然有刷新，SDRAM中的数据是自然可以保持住的。SDRAM进入self refresh后，SDRAM controller也会disable输出到SDRAM的clock，从而整体的功耗都降低下来。</p>
+<ul>
+<li><strong>SDRAM无自动预充电突发读时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdrReadWithout.png" alt=""></p>
+<p>上图是需要由外部控制器发送预充电命令的突发读操作。</p>
+<ul>
+<li><strong>SDRAM自动预充电突发读时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdrRead.png" alt=""></p>
+<p>上图的读操作，不需要外部的SDRAM控制器发送预充电命令，在每个读操作结束后SDRAM内部会自动产生一个预充电操作。</p>
+<ul>
+<li><strong>SDRAM无自动预充电单操作读时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdrSReadWithout.png" alt=""></p>
+<p>上图是需要由外部控制器发送预充电命令的Single读操作。</p>
+<ul>
+<li><strong>SDRAM自动预充电单操作读时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdrSRead.png" alt=""><br>上图的Single读操作，不需要外部的SDRAM控制器发送预充电命令，在每个读操作结束后SDRAM内部会自动产生一个预充电操作。</p>
+<ul>
+<li><strong>SDRAM变换BANK读访问时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdrAlteraBankR.png" alt=""></p>
+<p>上图是改变BANK的读操作时序</p>
+<ul>
+<li><strong>SDRAM读时DQM操作时序</strong></li>
+</ul>
+<p>上图是SDRAM在进行读操作时的DQM信号的时序图</p>
+<p><img src="/uploads/2015/06/sdrReadDQM.png" alt=""></p>
+<ul>
+<li><strong>SDRAM页突发读时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdrReadPage.png" alt=""></p>
+<p>上图是SDRAM进行页突发读的操作时序，突发长度为一页。</p>
+<ul>
+<li><strong>SDRAM无自动预充电突发写时序</strong></li>
+</ul>
+<p>上图是需要由外部控制器发送预充电命令的突发写操作。</p>
+<p><img src="/uploads/2015/06/sdrWriteWithout.png" alt=""></p>
+<ul>
+<li><strong>SDRAM自动预充电突发写时序</strong></li>
+</ul>
+<p>上图的写操作，不需要外部的SDRAM控制器发送预充电命令，在每个写操作结束后SDRAM内部会自动产生一个预充电操作。</p>
+<p><img src="/uploads/2015/06/sdrWrite.png" alt=""></p>
+<ul>
+<li><strong>SDRAM无自动预充电单操作写时序</strong></li>
+</ul>
+<p>上图是需要由外部控制器发送预充电命令的Single写操作。</p>
+<p><img src="/uploads/2015/06/sdrSWriteWithout.png" alt=""></p>
+<ul>
+<li><strong>SDRAM自动预充电单操作写时序</strong></li>
+</ul>
+<p>上图的Single写操作，不需要外部的SDRAM控制器发送预充电命令，在每个读操作结束后SDRAM内部会自动产生一个预充电操作。</p>
+<p><img src="/uploads/2015/06/sdrSWrite.png" alt=""></p>
+<ul>
+<li><strong>SDRAM变换BANK写访问时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdrAlteraBankW.png" alt=""></p>
+<p>上图是改变BANK的写操作时序</p>
+<ul>
+<li><strong>SDRAM读时DQM操作时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdrWriteDQM.png" alt=""></p>
+<p>上图是SDRAM在进行写操作时的DQM信号的时序图</p>
+<ul>
+<li><strong>SDRAM页突发写时序</strong></li>
+</ul>
+<p><img src="/uploads/2015/06/sdrWritePage.png" alt=""></p>
+<p>上图是SDRAM进行页突发写的操作时序，突发长度为一页。</p>
+<h4 id="SDRAM控制器接口定义"><a href="#SDRAM控制器接口定义" class="headerlink" title="SDRAM控制器接口定义"></a>SDRAM控制器接口定义</h4><p>SDRAM控制器提供如下接口</p>
+<p><img src="/uploads/2015/06/sdr_interface.png" alt=""></p>
+<p>其接口PIN定义如下</p>
+<p><img src="/uploads/2015/06/sdr_pinDef.png" alt=""></p>
+<h4 id="SDRAM控制器设计"><a href="#SDRAM控制器设计" class="headerlink" title="SDRAM控制器设计"></a>SDRAM控制器设计</h4><p><strong>SDRAM控制器框图</strong></p>
+<p><img src="/uploads/2015/06/sdr_block.png" alt=""></p>
+<p>SDRAM控制器框图如上图，主要由以下三个模块构成：</p>
+<ul>
+<li><strong>Control Interface Module（控制接口模块）</strong></li>
+</ul>
+<p>控制接口模块对主机发出的命令解码并寄存，传送已经解码的NOP, WRITEA, READA,<br>REFRESH, PRECHARGE 和 LOAD_MODE 命令和 ADDR给命令模块， LOAD_REG1 和<br>LOAD_REG2 命令解码后， 同ADDR一起装入内部的REG1和REG2寄存器。下图给出了控制接口<br>模块的框图。</p>
+<p><img src="/uploads/2015/06/sdr_ctrlInterface.png" alt=""></p>
+<p>控制接口模块也含有一个16位的减法计数器， 和用于给命令模块产生周期刷新命令的电路，<br>16位的减法计数器装入REG2中的数值， 并递减到0， 但计数器为0时， 执行REFRESH_REQ输出<br>给命令模块，该命令一致输出直到命令模块响应该刷新请求。收到命令模块的刷新请求后，减<br>法计数器重新装入REG2中的数值，重复以上过程。 REG2是一个表示SDR SDRAM控制其发出<br>的REFRESH（刷新）命令之间的时间间隔周期，数值等于refresh_period/clock_period 的整数。</p>
+<ul>
+<li><strong>Command Module（命令模块）</strong></li>
+</ul>
+<p>“命令模块” 接收“控制接口模块” 输出的已经解码的命令，和周期性输出的刷新请求，<br>并产生合适的命令给SDRAM器件， 模块含有一个简易的仲裁电路用于仲裁主机的命令和刷新控<br>制逻辑所产生的刷新请求。从刷新控制逻辑电路发出的刷新请求比主机接口的命令的优先级别<br>高。如果主机命令和隐含的刷新操作同时出现，仲裁电路在刷新操作完成之前就不发出<br>CMDACK应答。 如果主机操作在进行中， 收到了刷新命令， 刷新操作将延时到主机操作完成后<br>执行，下图给出了命令模块的框图。</p>
+<p><img src="/uploads/2015/06/sdr_ctrCmd.png" alt=""></p>
+<p>在仲裁电路已经接受主机命令后， 命令被送到模块的命令发生器部分， 命令模块使用3个移<br>位寄存器来产生命令之间的时序，一个移位寄存器用于控制ACTIVATE命令；第二个用于控制<br>READA or WRITEA命令发出的时间；第三个用于对命令的持续时间定时，这样仲裁其就可以<br>判断最近请求的操作是否已经完成。<br>命令模块也实现SDRAM的地址复用，地址的行部分在ACTIVATE(RAS) 命令时复用到<br>SDRAM输出的A[11:0], 地址的列部分在READA(CAS) 或 WRITEA命令时复用到SDRAM地址<br>线上,<br>控制模块所产生的输出信号OE用于控制数据通路模块的DATAIN 通路的三态缓冲。</p>
+<ul>
+<li><strong>Data Path Module（数据通路模块）</strong></li>
+</ul>
+<p>数据通路模块提供了SDRAM和主机之间的数据接口， 主机在 WRITEA 时从 DATAIN 上输入<br>数据，在 READA 命令时 从 DATAOUT 上取出数据。图10给出了数据通路模块的方块图，<br>DATAIN通路由 2段通路组成，以和对应的 CMDACK和送往SDRAM的命令的时序对齐，<br>DATAOUT也由2段通路构成，用于在READA 命令期间寄存SDRAM的输出数据， DATAOUT<br>的通路延时能够减少到1次或者不寄存，唯一的影响的是DATAIUT和CMKACK的关系会改变。</p>
+<p><img src="/uploads/2015/06/sdrCtrlData.png" alt=""></p>
+<p>注：<em>在本项目设计中由于时序上的原因，该模块已被裁剪掉，但为了更好地完整说明SDRAM控制器的设计，所以仍在文档中保留了该模块的描述</em></p>
+<h3 id="TFT-CTRL控制核心模块"><a href="#TFT-CTRL控制核心模块" class="headerlink" title="TFT_CTRL控制核心模块"></a>TFT_CTRL控制核心模块</h3><p><img src="/uploads/2015/06/tftCtrl.png" alt=""></p>
+<p>核心控制器模块的主要组成部分及功能设计说明:<br><strong>用户显存坐标=》SDRAM地址转换</strong> ——完成用户像素逻辑坐标到SDRAM地址的映射，省去了用户在上位机由坐标计算SDRAM地址的麻烦。同时该功能块还用于用户写显存时X、Y坐标在指定矩形操作区内的的自动增长维护。</p>
+<p><strong>SDRAM带宽仲裁</strong> ——由于SDRAM的接口并不是并行，在TFT模块从SDRAM读取数据刷新屏模式，用户的不能SDRAM进行读写操作，因此需要一个SDRAM带宽仲裁模块来对SDRAM的操作带宽进行合理分配。本设计中包含有三个FIFO模块，其中FIFO_RD_TFT是用于缓存TFT从SDRAM读取的数据，FIFO_WR_USR用于缓存用户写写和数据，FIFO_RD_USR用于缓存用户从SDRAM读取的数据。在TFT读取SDRAM数据时，若有用户往控制器写入数据，将会被缓存在FIFO_WR_USR中，在本设计中由于仲裁器留给用户的SDRAM平均写入带宽远大于用户通过8080接口写入的带宽，因此FIFO不会溢出，用户也不会感觉到数据被缓存；当用户往控制器发送读数据命令时，若此时SDRAM处于TFT读操作中，该命令将会暂缓执行，直至TFT读取SDRAM数据操作结束，在本设中于TFT读取SDRAM操作的周期很短，仲裁器留给SDRAM的用户平均读取操作远大于用户通过8080接口读取的带宽，因此用户不会感觉到数据的平连续。</p>
+<p><strong>TFT_CTRL控制状态机</strong> —— 这是TFT控制核心模块的核心，该状态机用于控制TFT_CTRL模块内部的状态切换，实现一种类似CPU的流程化控制。</p>
+<p><strong>TFT像素坐标=》SDRAM地址转换</strong> —— 实现TFT像素坐标到SDRAM地址的转换，同时控制TFT刷新时X、Y坐标的自动增长控制。</p>
+<h4 id="TFT-CTRL控制核心状态机"><a href="#TFT-CTRL控制核心状态机" class="headerlink" title="TFT_CTRL控制核心状态机"></a>TFT_CTRL控制核心状态机</h4><p><img src="/uploads/2015/06/tftCtrlState.png" alt=""><br>状态机各状态含义：<br><strong>WAITE_SDR_INIT</strong> ——等待SDRAM初始化完成</p>
+<p><strong>AUTO_REF_SDR</strong> —— 执行SDRAM自动刷新</p>
+<p><strong>RD_SDR_TFT</strong> —— 执行从SDRAM读取TFT刷屏数据</p>
+<p><strong>RD_SDR_USR</strong> —— 执行用户读显存操作</p>
+<p><strong>WR_SDR_USR</strong> —— 执行用户写显存操作</p>
+<p><strong>NONE_OP_TFT</strong> —— TFT无数据请求</p>
+<p><strong>NONE_OP_USR</strong> —— 无外部用户请求</p>
+<p>在控制器上电后，首先控制器内部的<strong>多路时钟生成与系统复位控制模块</strong>会延时一段时间，以等待FPGA稳定，之后内部PLL产生一个CLK&#95;LOCK信号，这个CLK&#95;LOCK信号表明PLL已能稳定输出时钟，此时产生一个复位信号用于作为整个控制器的内部复位信号。内部复位完成之后，开始进行SDRAM的初始化工作，经过一系统的SDRAM控制命令之后，SDRAM的内部MODE寄存器成功加载数据，此时即完成了SDRAM的初始化，在这之前状态机始终处理WAITE&#95;SDR&#95;INIT，TFT时序发生器一直处于复位状态。WAITE&#95;SDR&#95;INIT结束后，进入到AUTO&#95;REF&#95;SDR状态，进行SDRAM非初始化阶段的首次自动刷新操作。AUTO&#95;REF&#95;SDR状态同时会结束TFT时序发生器的复位。直至SDRAM自动刷新命令成功完成，状态机始终处理AUTO&#95;REF&#95;SDR。自动刷新命令完成后，若此时TFT模块请求读取SDRAM那么将会进入RD&#95;SDR&#95;TFT状态，反之则进入NONE&#95;OP&#95;TFT状态。在进入RD&#95;SDR&#95;TFT状态后，状态机将始终处于RD&#95;SDR&#95;TFT状态直至数据读取完成。在RD&#95;SDR&#95;TFT或NONE&#95;OP&#95;TFT状态结束之后，若有用户操作请求则进入WR&#95;SDR&#95;USR或RD&#95;SDR&#95;USR状态或NONE&#95;OP&#95;USR状态。若FINISH&#95;OP&#95;SDR状态之后wrUsrFlag标志置位则进入RD&#95;SDR&#95;USR状态，若rdUsrFlag标志置位则进入WR&#95;SDR&#95;USR状态，若二者都未置位则进入NONE&#95;OP&#95;USR状态。进入WR&#95;SDR&#95;USR状态后，直至完成用户数据向SDRAM写入状态机都将始终处于WR&#95;SDR&#95;USR状态。结束WR&#95;SDR&#95;USR状态后，若autoRefFlag置位则进入到AUTO&#95;REF&#95;SDR状态。RD&#95;SDR&#95;USR、NONE&#95;OP&#95;USR状态的跳转逻辑与WR&#95;SDR&#95;USR相同。至此，整个状态机周而复始重复以上过程。</p>
+<h3 id="TFT时序控制器"><a href="#TFT时序控制器" class="headerlink" title="TFT时序控制器"></a>TFT时序控制器</h3><h4 id="TFT行场模式时序"><a href="#TFT行场模式时序" class="headerlink" title="TFT行场模式时序"></a>TFT行场模式时序</h4><p><img src="/uploads/2015/06/tft_hv.png" alt=""></p>
+<p>在TFT行场模式下，HS行信号在VS场信号的t_W时段有效，DCLK像素时钟信号在HS行信号的t_HV段内有效，在t_HV时段内，每个DCLK下降沿TFT采样一个数据。在t_HV时段内，TFT完成一行图像的刷新，在t_W时段内TFT完成一幅图像的刷新。</p>
+<h4 id="TFT-DE模式时序"><a href="#TFT-DE模式时序" class="headerlink" title="TFT DE模式时序"></a>TFT DE模式时序</h4><p><img src="/uploads/2015/06/tft_de.png" alt=""></p>
+<p>在DE模式下，在DE有效的情况下，每个DCLK下降沿TFT采样一个数据，直至完成一幅图像的刷新。</p>
+<h4 id="TFT时序控制器设计"><a href="#TFT时序控制器设计" class="headerlink" title="TFT时序控制器设计"></a>TFT时序控制器设计</h4><p><img src="/uploads/2015/06/tft_drv.png" alt=""></p>
+<p><strong>行同步计数器</strong> —— 计数DCLK，用于产生行同步信号</p>
+<p><strong>场同步计数器</strong> —— 计数行同步计数器的翻转次数，用于产生场同步信号</p>
+<p><strong>行信号生成逻辑</strong> —— 产生行同步脉冲时序</p>
+<p><strong>场信号生成逻辑</strong> —— 产生场同步脉冲时序</p>
+<p><strong>DE信号生成逻辑</strong> —— 产生DE同步脉冲时序</p>
+<p><strong>数据请求生成逻辑</strong> —— 产生数据请求信号，请求TFT_CTRL模块从SDRAM读取显存数据</p>
+<p>###TFT背光PWM控制模块</p>
+<p><img src="/uploads/2015/06/led_pwm.png" alt=""></p>
+<p><strong>背光寄存器</strong> —— 用于寄存用户写入的背光值，该值由TFT_CTRL输出</p>
+<p><strong>PWM计数比较器</strong> —— 计数背光模块时钟，并与背光寄存器中的值进行比较，输出PWM波</p>
+<p>###多路时钟生成，与系统复位控制模块</p>
+<p><img src="/uploads/2015/06/clk_rst.png" alt=""></p>
+<p><strong>PLL/DLL锁相环</strong> —— 器件内置的PLL或DLL硬核IP，用于倍频和分频产生系统内部所需的25M，100M，与源时钟有一定相移的100M时钟。</p>
+<p><strong>内部系统延时复位模块</strong> —— 用于等待上电后外部时钟，同步控制器外部的复位信号，同时等待内部PLL时钟锁定，综合以上信号生成用于系统内部的最终复位信号。</p>
+
+      
+    </div>
+    
+  </div>
+  
+    
+    <div class="copyright">
+        <p><span>本文标题:</span><a href="/2015/08/02/e5-9f-ba-e4-ba-8efpgacpld-e7-9a-84tft-e6-98-be-e7-a4-ba-e6-8e-a7-e5-88-b6-e5-99-a8-e9-80-bb-e8-be-91-e4-bb-a3-e7-a0-81-e7-9a-84-e8-af-a6-e7-bb-86-e8-ae-be-e8-ae-a1-e8-af-b4-e6-98-8e-e4-b9-a6/">基于FPGA/CPLD + SDRAM 的TFT液晶控制器(lcd controller)逻辑代码的详细设计说明书</a></p>
+        <p><span>文章作者:</span><a href="/" title="访问 shawge 的个人博客">shawge</a></p>
+        <p><span>发布时间:</span>2015年08月02日 - 16时38分</p>
+        <p><span>最后更新:</span>2016年07月30日 - 09时59分</p>
+        <p>
+            <span>原始链接:</span><a class="post-url" href="/2015/08/02/e5-9f-ba-e4-ba-8efpgacpld-e7-9a-84tft-e6-98-be-e7-a4-ba-e6-8e-a7-e5-88-b6-e5-99-a8-e9-80-bb-e8-be-91-e4-bb-a3-e7-a0-81-e7-9a-84-e8-af-a6-e7-bb-86-e8-ae-be-e8-ae-a1-e8-af-b4-e6-98-8e-e4-b9-a6/" title="基于FPGA/CPLD + SDRAM 的TFT液晶控制器(lcd controller)逻辑代码的详细设计说明书">http://hex55.com/2015/08/02/e5-9f-ba-e4-ba-8efpgacpld-e7-9a-84tft-e6-98-be-e7-a4-ba-e6-8e-a7-e5-88-b6-e5-99-a8-e9-80-bb-e8-be-91-e4-bb-a3-e7-a0-81-e7-9a-84-e8-af-a6-e7-bb-86-e8-ae-be-e8-ae-a1-e8-af-b4-e6-98-8e-e4-b9-a6/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://hex55.com/2015/08/02/e5-9f-ba-e4-ba-8efpgacpld-e7-9a-84tft-e6-98-be-e7-a4-ba-e6-8e-a7-e5-88-b6-e5-99-a8-e9-80-bb-e8-be-91-e4-bb-a3-e7-a0-81-e7-9a-84-e8-af-a6-e7-bb-86-e8-ae-be-e8-ae-a1-e8-af-b4-e6-98-8e-e4-b9-a6/　　作者: shawge" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <script src="/js/clipboard.min.js"></script>
+            <script> var clipboard = new Clipboard('.copy-path'); </script>
+        </p>
+        <p>
+            <span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" title="中国大陆 (CC BY-NC-SA 3.0 CN)" target = "_blank">"署名-非商用-相同方式共享 3.0"</a> 转载请保留原文链接及作者。
+        </p>
+    </div>
+
+
+
+<nav id="article-nav">
+  
+    <a href="/2015/08/04/fpga-e6-93-8d-e4-bd-9c-e5-9b-9b-e7-ba-bf-e5-88-b6spi-flash-ef-bc-88quad-spi-flash-ef-bc-89-ef-bc-883-ef-bc-89/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption"><</strong>
+      <div class="article-nav-title">
+        
+          FPGA操作四线制SPI FLASH（Quad SPI Flash） （3）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/08/01/iap-ewarm-stl-e5-a0-86-e7-a9-ba-e9-97-b4-e4-b8-8d-e5-a4-9f-e8-a7-a3-e5-86-b3-e5-8a-9e-e6-b3-95/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">IAP EWARM STL 堆栈空间不够解决办法</div>
+      <strong class="article-nav-caption">></strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+    <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#项目背景及开发目的"><span class="toc-number">1.</span> <span class="toc-text">项目背景及开发目的</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#项目需求及设计指标"><span class="toc-number">2.</span> <span class="toc-text">项目需求及设计指标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#项目方案选型（参考了ZLG的相关文档）"><span class="toc-number">3.</span> <span class="toc-text">项目方案选型（参考了ZLG的相关文档）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-基于CPLD-SRAM的方案。"><span class="toc-number">3.1.</span> <span class="toc-text">1. 基于CPLD + SRAM的方案。</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-基于FPGA-SDRAM的方案"><span class="toc-number">3.2.</span> <span class="toc-text">2. 基于FPGA + SDRAM的方案</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#控制器总体设计"><span class="toc-number">4.</span> <span class="toc-text">控制器总体设计</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#TFT控制器接口设计及PIN定义说明"><span class="toc-number">4.1.</span> <span class="toc-text">TFT控制器接口设计及PIN定义说明</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#控制器模块详细设计说明"><span class="toc-number">5.</span> <span class="toc-text">控制器模块详细设计说明</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#MCU-FPGA总线接口模块"><span class="toc-number">5.1.</span> <span class="toc-text">MCU_FPGA总线接口模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SDRAM控制器（参考了ALTERA《SDR-SDRAM-Controller》白皮书）"><span class="toc-number">5.2.</span> <span class="toc-text">SDRAM控制器（参考了ALTERA《SDR SDRAM Controller》白皮书）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#SDRAM架构框图及原理"><span class="toc-number">5.2.1.</span> <span class="toc-text">SDRAM架构框图及原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SDRAM时序"><span class="toc-number">5.2.2.</span> <span class="toc-text">SDRAM时序</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SDRAM控制器接口定义"><span class="toc-number">5.2.3.</span> <span class="toc-text">SDRAM控制器接口定义</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SDRAM控制器设计"><span class="toc-number">5.2.4.</span> <span class="toc-text">SDRAM控制器设计</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TFT-CTRL控制核心模块"><span class="toc-number">5.3.</span> <span class="toc-text">TFT_CTRL控制核心模块</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#TFT-CTRL控制核心状态机"><span class="toc-number">5.3.1.</span> <span class="toc-text">TFT_CTRL控制核心状态机</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TFT时序控制器"><span class="toc-number">5.4.</span> <span class="toc-text">TFT时序控制器</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#TFT行场模式时序"><span class="toc-number">5.4.1.</span> <span class="toc-text">TFT行场模式时序</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TFT-DE模式时序"><span class="toc-number">5.4.2.</span> <span class="toc-text">TFT DE模式时序</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TFT时序控制器设计"><span class="toc-number">5.4.3.</span> <span class="toc-text">TFT时序控制器设计</span></a></li></ol></li></ol></li></ol>
+</div>
+<input type="button" id="tocButton" value="隐藏目录"  title="点击按钮隐藏或者显示文章目录">
+
+<script src="https://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js"></script>
+<script>
+    var valueHide = "隐藏目录";
+    var valueShow = "显示目录";
+
+    if ($(".left-col").is(":hidden")) {
+        $("#tocButton").attr("value", valueShow);
+    }
+    $("#tocButton").click(function() {
+        if ($("#toc").is(":hidden")) {
+            $("#tocButton").attr("value", valueHide);
+            $("#toc").slideDown(320);
+        }
+        else {
+            $("#tocButton").attr("value", valueShow);
+            $("#toc").slideUp(350);
+        }
+    })
+    if ($(".toc").length < 1) {
+        $("#toc, #tocButton").hide();
+    }
+</script>
+
+
+
+
+
+<div class="bdsharebuttonbox">
+	<a href="#" class="fx fa-weibo bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+	<a href="#" class="fx fa-weixin bds_weixin" data-cmd="weixin" title="分享到微信"></a>
+	<a href="#" class="fx fa-qq bds_sqq" data-cmd="sqq" title="分享到QQ好友"></a>
+	<a href="#" class="fx fa-facebook-official bds_fbook" data-cmd="fbook" title="分享到Facebook"></a>
+	<a href="#" class="fx fa-twitter bds_twi" data-cmd="twi" title="分享到Twitter"></a>
+	<a href="#" class="fx fa-linkedin bds_linkedin" data-cmd="linkedin" title="分享到linkedin"></a>
+	<a href="#" class="fx fa-files-o bds_copy" data-cmd="copy" title="分享到复制网址"></a>
+</div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"2","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+
+
+
+
+    
+      <div class="duoshuo" id="comments">
+    <!-- 多说评论框 start -->
+    <div class="ds-thread" data-thread-key="2015/08/02/e5-9f-ba-e4-ba-8efpgacpld-e7-9a-84tft-e6-98-be-e7-a4-ba-e6-8e-a7-e5-88-b6-e5-99-a8-e9-80-bb-e8-be-91-e4-bb-a3-e7-a0-81-e7-9a-84-e8-af-a6-e7-bb-86-e8-ae-be-e8-ae-a1-e8-af-b4-e6-98-8e-e4-b9-a6/" data-title="基于FPGA/CPLD + SDRAM 的TFT液晶控制器(lcd controller)逻辑代码的详细设计说明书" data-url="http://hex55.com/2015/08/02/e5-9f-ba-e4-ba-8efpgacpld-e7-9a-84tft-e6-98-be-e7-a4-ba-e6-8e-a7-e5-88-b6-e5-99-a8-e9-80-bb-e8-be-91-e4-bb-a3-e7-a0-81-e7-9a-84-e8-af-a6-e7-bb-86-e8-ae-be-e8-ae-a1-e8-af-b4-e6-98-8e-e4-b9-a6/"></div>
+    <!-- 多说评论框 end -->
+    <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+    <script type="text/javascript">
+    var duoshuoQuery = {short_name:"hex55"};
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = '/js/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0] 
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+    <!-- 多说公共JS代码 end -->
+</div>
+
+    
+
+
+
+    <div class="scroll" id="post-nav-button">
+        
+            <a href="/2015/08/04/fpga-e6-93-8d-e4-bd-9c-e5-9b-9b-e7-ba-bf-e5-88-b6spi-flash-ef-bc-88quad-spi-flash-ef-bc-89-ef-bc-883-ef-bc-89/" title="上一篇: FPGA操作四线制SPI FLASH（Quad SPI Flash） （3）">
+                <i class="fa fa-angle-left"></i>
+            </a>
+        
+        <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
+        
+            <a href="/2015/08/01/iap-ewarm-stl-e5-a0-86-e7-a9-ba-e9-97-b4-e4-b8-8d-e5-a4-9f-e8-a7-a3-e5-86-b3-e5-8a-9e-e6-b3-95/" title="下一篇: IAP EWARM STL 堆栈空间不够解决办法">
+                <i class="fa fa-angle-right"></i>
+            </a>
+        
+    </div>
+    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2016/07/29/git-push到github提速解决办法/">git push到github提速解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/09/e8-a7-a3-e5-86-b3python-e6-89-93-e5-8c-85-no-module-named-xxx/">解决python 打包 No module named 'XXX'</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/08/cc-e5-86-85-e5-b5-8cpython-e6-89-93-e5-8c-85-e5-8f-91-e5-b8-83/">c/c++内嵌python打包发布</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/06/e8-a7-a3-e5-86-b3failed-to-load-platform-plugin-windows/">解决failed-to-load-platform-plugin-windows</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/04/e8-a7-a3-e5-86-b3fatal-python-error-py-initialize-cant-initialize-sys-standard-streams/">解决Fatal Python error: Py_Initialize: can't initialize sys standard streams</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/04/01/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa-e5-89-8d-e7-ab-af-e7-94-b5-e8-b7-af/">逻辑分析仪前端电路</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/14/e8-8f-8a-e8-8a-b1-e5-85-ac-e5-8f-b8-e9-9d-a2-e8-af-95-e8-ae-b0-e5-bd-95/">菊花公司面试记录</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/02/24/fpga-e4-b8-8e-cpu-e6-95-b0-e6-8d-ae-e4-ba-a4-e4-ba-92-e7-9a-84-e6-bc-ab-e7-94-bb-e5-b9-bf-e5-91-8a/">FPGA 与 CPU 数据交互的漫画广告</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/02/23/altium-designer-adc-e5-a4-9a-e9-80-9a-e9-81-93-e8-ae-be-e8-ae-a1/">Altium designer  ADC多通道设计</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/02/22/altium-designer-e5-b0-86pcb-e4-b8-9d-e5-8d-b0-e6-a0-87-e5-8f-b7-e5-8f-8d-e6-a0-87-e8-87-b3-e5-8e-9f-e7-90-86-e5-9b-be/">Altium Designer 将PCB丝印标号反标至原理图</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/25/pid-e5-88-9d-e5-ad-a6-e8-80-85-e6-8c-87-e5-8d-97/">PID初学者指南</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/18/e8-bf-90-e6-94-be-e5-a4-8d-e4-b9-a0-e7-ac-94-e8-ae-b0/">运放复习笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/12/qmodbus-e5-9c-a8visual-studio-e4-b8-ad-e7-9a-84-e7-bc-96-e8-af-91-e3-80-82/">qmodbus在visual studio中的编译。</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/10/e8-b6-85-e9-ab-98-e9-80-9f-e9-ab-98-e7-b2-be-e5-ba-a6-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aa-e7-ac-ac-e4-b8-89-e7-89-88/">超高速高精度红外测径仪第三版</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/08/e5-a6-82-e4-bd-95-e8-af-bb-e6-87-82git-e7-9a-84diff-e4-bf-a1-e6-81-af/">如何读懂GIT的DIFF信息</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/06/freemodbus-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-e8-af-a6-e8-a7-a3/">freemodbus源码分析详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/05/freemodbus-rtuascii-e5-ae-98-e6-96-b9-e7-a7-bb-e6-a4-8d-e6-96-87-e6-a1-a3/">freemodbus RTU/ASCII 官方移植文档</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/02/chipscope-e8-bf-9e-e6-8e-a5platform-cable-usb-jtag-e5-a4-b1-e8-b4-a5-e5-8e-9f-e5-9b-a0-e5-8f-8a-e8-a7-a3-e5-86-b3-e5-8a-9e-e6-b3-95/">chipscope 连接platform cable usb JTAG失败原因及解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/24/altium-designer-e8-87-aa-e5-8a-a8-e6-b7-bb-e5-8a-a0-e6-88-90-e7-89-87-e7-9a-84-e6-8b-bc-e6-8e-a5-e5-ad-94-ef-bc-88-e7-bc-9d-e5-90-88-e5-ad-94-ef-bc-89/">altium-designer自动添加成片的拼接孔（缝合孔）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/22/e9-ab-98-e9-80-9f-e9-ab-98-e7-b2-be-e5-ba-a6-e6-b5-8b-e5-be-84-e4-bb-aa-e4-b8-bb-e6-9d-bf-e7-ac-ac-e4-ba-8c-e7-89-88-e5-ae-8c-e5-b7-a5/">高速高精度测径仪主板第二版完工</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/22/altium-designer-e8-87-aa-e5-8a-a8-e6-b7-bb-e5-8a-a0-e5-b1-8f-e8-94-bd-e5-ad-94-ef-bc-88-e5-8c-85-e5-9c-b0-e5-ad-94-ef-bc-89/">altium-designer-自动添加屏蔽孔（包地孔）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/07/fpga-e6-9e-b6-e6-9e-84-e7-a4-ba-e4-be-8b-ef-bc-9aaes-e5-8a-a0-e5-af-86/">FPGA架构示例：AES加密</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/13/lantern-tor-browser-e9-9a-90-e8-b8-aa-e6-9c-80-e4-bd-b3-e6-8b-8d-e6-a1-a3/">Lantern && Tor Browser 隐踪最佳拍档</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/10/26/e7-94-a8-e4-ba-8e-e9-80-9a-e8-ae-af-e6-95-b0-e6-8d-ae-e7-bc-93-e5-ad-98-e7-9a-84-e9-ab-98-e6-95-88-e8-bd-af-e4-bb-b6fifo-e5-ae-9e-e7-8e-b0/">用于通讯数据缓存的高效软件FIFO实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/10/24/e9-ab-98-e9-80-9f-e9-ab-98-e7-b2-be-e5-ba-a6-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aa/">高速高精度红外测径仪</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/10/05/fpga-e6-9e-b6-e6-9e-84-e7-9a-84-e5-8a-9f-e8-80-97-e4-bc-98-e5-8c-96-ef-bc-883-ef-bc-89/">FPGA架构的功耗优化（3）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/10/04/fpga-e6-9e-b6-e6-9e-84-e7-9a-84-e5-8a-9f-e8-80-97-e4-bc-98-e5-8c-96-ef-bc-882-ef-bc-89/">FPGA架构的功耗优化（2）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/30/fpga-e6-9e-b6-e6-9e-84-e7-9a-84-e5-8a-9f-e8-80-97-e4-bc-98-e5-8c-96-ef-bc-881-ef-bc-89/">FPGA架构的功耗优化（1）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/25/e5-a6-82-e4-bd-95-e8-a7-a3-e5-86-b3gcc-e6-88-96mdk-e6-88-96iar-e5-bc-80-e5-90-af-o3-ef-bc-88-e6-9c-80-e9-ab-98-e7-ba-a7-e5-88-ab-ef-bc-89-e4-bc-98-e5-8c-96-e5-90-8e-e7-a8-8b-e5-ba-8f-e4-b8-8d/">如何解决GCC或MDK或IAR开启-O3（最高级别）优化后程序不能正常运行的问题?</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/19/e7-ba-bf-e9-98-b5ccd-e4-b8-93-e7-94-a8ad9945-e9-85-8d-e7-bd-ae-e7-a8-8b-e5-ba-8f-e6-ba-90-e7-a0-81-ef-bc-88-e5-b7-b2-e9-aa-8c-e8-af-81-e9-80-9a-e8-bf-87-ef-bc-89/">线阵CCD专用AD9945 配置程序源码（已验证通过）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/15/e5-b0-86newlib-e7-9a-84printf-e9-87-8d-e5-ae-9a-e5-90-91-e5-88-b0tft-lcd-e6-98-be-e7-a4-ba/">将newlib的printf重定向到TFT LCD显示</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/10/e6-9d-a5-e7-82-b9-e5-86-b7-e7-9a-84-e7-94-b5-e5-ad-90-e7-9f-a5-e8-af-86/">来点冷的电子知识</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/10/e6-95-99-e5-b8-88-e8-8a-82-e5-bf-ab-e4-b9-90-ef-bc-81/">教师节快乐！</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/09/mcu-e9-80-9a-e7-94-a8-e6-8c-89-e9-94-ae-ef-bc-88-e5-90-ab-e8-a7-a6-e6-91-b8-ef-bc-89-e5-a4-84-e7-90-86-e6-a8-a1-e5-9d-97-ef-bc-8c-e6-94-af-e6-8c-81-e5-a7-94-e6-89-98/">mcu通用按键（含触摸）处理模块，支持委托</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/07/e7-ba-bf-e9-98-b5ccd-e6-95-b0-e6-8d-ae-e9-87-87-e9-9b-86adcad9945-e5-88-9d-e5-a7-8b-e9-85-8d-e7-bd-ae-e5-8c-96-e6-ba-90-e7-a0-81/">线阵CCD数据采集ADC(AD9945)初始配置化源码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/06/e6-80-8e-e4-b9-88-e8-a7-a3-e5-86-b3mdk-e6-af-8f-e6-ac-a1-e9-83-bd-e5-85-a8-e7-bc-96-e8-af-91-e7-9a-84-e5-8a-9e-e6-b3-95/">怎么解决MDK 每次都全编译的办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/02/stm32-jtag-e5-8f-a3-e5-a6-82-e4-bd-95-e5-a4-8d-e7-94-a8-ef-bc-9f/">STM32 JTAG 口如何复用？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/31/modelsim-e7-bc-96-e8-af-91-microsemiactel-fpga-e4-bb-bf-e7-9c-9f-e5-ba-93/">modelsim 编译 microsemi(actel) FPGA 仿真库</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/30/cpldfpga-e5-81-9a-e7-9a-84tft-e6-8e-a7-e5-88-b6-e5-99-a8verilog-e5-bc-80-e6-ba-90-e4-bb-a3-e7-a0-81/">CPLD/FPGA做的TFT控制器verilog开源代码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/29/e9-ab-98-e9-80-9f-e7-ba-bf-e9-98-b5ccd-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aa-e9-80-9a-e4-bf-a1-e8-b0-83-e8-af-95-e9-80-9a-e8-bf-87/">高速线阵CCD红外测径仪通信调试通过</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/29/libero-soc-e7-9a-84failed-to-execute-synplify-pro-exe-e9-94-99-e8-af-af-e6-80-8e-e4-b9-88-e8-a7-a3-e5-86-b3-ef-bc-9f/">libero soc的Failed to execute: 'synplify_pro.exe'错误怎么解决？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/28/e8-a7-a3-e5-86-b3-keil-mdk-error-l6235e-more-than-one-section-matches-selector/">解决 keil MDK error: L6235E: More than one section matches selector - cannot all be FIRST/LAST.</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/26/libero-soc-e6-97-a0-e6-b3-95-e5-90-af-e5-8a-a8-e6-80-8e-e6-a0-b7-e8-a7-a3-e5-86-b3-ef-bc-9f/">libero soc无法启动怎样解决？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/25/stm32-swdiojtag-e8-b0-83-e8-af-95-e5-8f-a3-e8-a2-ab-e7-a6-81-e7-94-a8-e5-90-8e-e6-80-8e-e4-b9-88-e8-a7-a3-e9-99-a4-ef-bc-9f/">STM32 SWDIO/JTAG 调试口被禁用后怎么解除？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/24/e5-90-84-e5-8e-82-e5-ae-b6-fpga-e3-80-81cpld-e5-86-85-e9-83-a8-e7-bb-93-e6-9e-84-e5-88-86-e6-9e-90-e5-8f-8a-e7-bc-96-e7-a0-81-e6-b3-a8-e6-84-8f-e4-ba-8b-e9-a1-b9/">各厂家 FPGA、CPLD内部结构分析及编码注意事项</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/23/fpga-e4-b8-ad-e8-b5-84-e6-ba-90-e5-8d-a0-e7-94-a8-e7-8e-87-e4-b8-8a-e9-99-90-e8-ae-be-e4-b8-ba-e5-a4-9a-e5-b0-91-e5-90-88-e9-80-82-ef-bc-9f/">FPGA中资源占用率上限设为多少合适？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/22/e5-8f-af-e7-94-a8-e4-ba-8e-e5-8d-95-e7-89-87-e6-9c-ba-e7-9a-84-e5-b5-8c-e5-85-a5-e5-bc-8f-e9-9d-9e-e9-80-92-e5-bd-92-e5-bf-ab-e9-80-9f-e6-8e-92-e5-ba-8f-e7-ae-97-e6-b3-95-e6-ba-90-e7-a0-81/">可用于单片机的嵌入式非递归快速排序算法源码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/21/e7-94-b5-e9-98-bb-e8-a7-a6-e6-91-b8-e5-b1-8f-e4-ba-94-e7-82-b9-e6-a0-a1-e5-87-86-e7-ae-97-e6-b3-95-e6-ba-90-e7-a0-81/">电阻触摸屏五点校准算法源码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/20/sep4020-nandflash-e5-90-af-e5-8a-a8-e8-af-a6-e8-a7-a3-ef-bc-8c-e4-b8-8d-e5-90-8c-e9-98-b6-e6-ae-b5-e5-ad-98-e5-82-a8-e5-99-a8-e6-98-a0-e5-b0-84-e7-a4-ba-e6-84-8f-e5-9b-be/">SEP4020 NandFlash启动详解，不同阶段存储器映射示意图</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/18/fpga-e8-a7-a3-e7-a0-81mipi-csi-ef-bc-88-e4-b8-80-ef-bc-89-d-phy-e7-90-86-e8-a7-a3/">FPGA解码MIPI CSI（一）——D-PHY理解</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/17/e5-ae-8c-e5-85-a8-e4-bf-ae-e5-a4-8dwin7-e5-bc-95-e5-af-bc/">完全修复WIN7引导</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/17/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-9d-a2-e7-a7-af-e4-bc-98-e5-8c-96/">FPGA、CPLD 架构的面积优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/16/warning-169177-1-pins-must-meet-altera-requirements-for-3-3-3-0-and-2-5-v-interfaces-for-more-information-refer-to-an-447-interfacing-cyclone-iv-e-devices-with-3-33-02-5-v-lvttllvcmos-io/">Warning (169177): 1 pins must meet Altera requirements for 3.3-, 3.0-, and 2.5-V interfaces. For more information, refer to AN 447: Interfacing Cyclone IV E Devices with 3.3\/3.0\/2.5-V LVTTL\/LVCMOS I\/O Systems.</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/16/win7-e5-85-b1-e4-ba-ab-e5-af-86-e7-a0-81-e9-94-99-e8-af-af-e8-a7-a3-e5-86-b3-e5-8a-9e-e6-b3-95/">WIN7 共享 密码错误解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/15/e5-b8-a6-e9-a9-b1-e5-8a-a8-e6-8e-a7-e5-88-b6-e5-99-a8ic-e7-9a-84tft-e6-98-be-e7-a4-ba-e5-b1-8f-e4-bd-bf-e7-94-a8-e8-af-b4-e6-98-8e/">带驱动控制器IC的TFT显示屏使用说明</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/15/e9-ab-98-e9-80-9f-e7-ba-bf-e9-98-b5ccd-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aapcb-e6-9d-bf-e5-9b-9e-e6-9d-a5-e5-95-a6-ef-bc-81/">高速线阵CCD红外测径仪PCB板回来啦！</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/14/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aausb-e4-bc-a0-e8-be-93-e5-ae-8c-e6-88-90/">逻辑分析仪USB传输完成</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/14/e5-87-a0-e7-a7-8d-e7-94-b5-e6-9c-ba-e6-8e-a7-e5-88-b6-e6-96-b9-e5-bc-8f-e7-9a-84-e5-bc-82-e5-90-8c/">几种电机控制方式的异同</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/13/tp-e7-8e-bb-e7-92-83-e8-a7-a6-e6-8e-a7-e6-8a-80-e6-9c-af-e5-8f-8a-e5-bc-80-e5-8f-91-e6-a1-88-e4-be-8b-e5-88-86-e4-ba-ab/">TP玻璃触控技术及开发案例分享</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/12/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa-e4-b8-8a-e4-b8-8b-e4-bd-8d-e6-9c-ba-e9-80-9a-e8-ae-af-e8-b0-83-e8-af-95-e6-88-90-e5-8a-9f/">逻辑分析仪上下位机通讯调试成功</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/11/e8-a7-a3-e5-86-b3-top-overlay-silk-primitive-on-board-region-without-silkscreen/">解决 Top Overlay Silk primitive on board region without silkscreen</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/10/e9-ab-98-e9-80-9f-e7-ba-bf-e9-98-b5ccd-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aapcb-e6-9c-80-e7-bb-88-e7-89-88/">高速线阵CCD红外测径仪PCB最终版</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/10/e4-b8-80-e7-a7-8d-e6-94-b9-e8-bf-9b-e5-9e-8b-e7-9a-84-e8-b6-85-e4-bd-8e-e6-88-90-e6-9c-ac-e5-92-8c-e5-bc-a6-e9-9f-b3-e8-9c-82-e9-b8-a3-e5-99-a8-e4-ba-a7-e7-94-9f-e7-94-b5-e8-b7-af/">一种改进型的超低成本和弦音蜂鸣器产生电路</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/09/e4-b8-80-e7-a7-8d-e4-bd-8e-e6-88-90-e6-9c-ac-e9-9f-b3-e6-95-88-e4-b8-b0-e5-af-8c-e7-9a-84-e5-92-8c-e5-bc-a6-e9-9f-b3-e8-9c-82-e9-b8-a3-e5-99-a8-e4-ba-a7-e7-94-9f-e7-94-b5-e8-b7-af-e5-8f-8a-e5-85-b6/">一种低成本音效丰富的和弦音蜂鸣器产生电路及其驱动代码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/07/e3-80-8a-e7-96-af-e7-8b-82-e7-9a-84-e6-8a-95-e8-b5-84-e8-b7-a8-e8-b6-8a-e5-a4-a7-e8-a5-bf-e6-b4-8b-e7-94-b5-e7-bc-86-e7-9a-84-e5-95-86-e4-b8-9a-e4-bc-a0-e5-a5-87-e3-80-8b-e8-af-bb/">《疯狂的投资——跨越大西洋电缆的商业传奇》读书笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/07/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-80-9f-e5-ba-a6-e4-bc-98-e5-8c-96/">FPGA、CPLD架构的速度优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/05/e9-ab-98-e9-80-9f-e7-ba-a2-e5-a4-96-e7-ba-bf-e9-98-b5ccd-e6-b5-8b-e5-be-84-e4-bb-aapcb-e5-ae-8c-e5-b7-a5/">高速红外线阵CCD测径仪PCB完工</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/05/e6-99-ba-e8-83-bd-e9-a9-ac-e6-a1-b6-e9-a1-b9-e7-9b-ae-e6-80-bb-e7-bb-93/">智能马桶项目总结</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/04/fpga-e6-93-8d-e4-bd-9c-e5-9b-9b-e7-ba-bf-e5-88-b6spi-flash-ef-bc-88quad-spi-flash-ef-bc-89-ef-bc-883-ef-bc-89/">FPGA操作四线制SPI FLASH（Quad SPI Flash） （3）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/02/e5-9f-ba-e4-ba-8efpgacpld-e7-9a-84tft-e6-98-be-e7-a4-ba-e6-8e-a7-e5-88-b6-e5-99-a8-e9-80-bb-e8-be-91-e4-bb-a3-e7-a0-81-e7-9a-84-e8-af-a6-e7-bb-86-e8-ae-be-e8-ae-a1-e8-af-b4-e6-98-8e-e4-b9-a6/">基于FPGA/CPLD + SDRAM 的TFT液晶控制器(lcd controller)逻辑代码的详细设计说明书</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/01/iap-ewarm-stl-e5-a0-86-e7-a9-ba-e9-97-b4-e4-b8-8d-e5-a4-9f-e8-a7-a3-e5-86-b3-e5-8a-9e-e6-b3-95/">IAP EWARM STL 堆栈空间不够解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/30/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa-e3-80-81quad-spi-flash-e8-bd-ac-e6-9d-bf-e5-87-ba-e7-82-89/">逻辑分析仪、QUAD SPI FLASH转板出炉</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/29/altium-designer-e5-9c-a8-e5-90-8c-e4-b8-80-e4-b8-aa-e5-b7-a5-e7-a8-8b-e4-b8-ad-e7-bb-98-e5-88-b6-e5-a4-9a-e5-9d-97pcb/">altium designer在同一个工程中绘制多块PCB</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/28/alitum-designer-e7-bb-99-e4-b8-80-e4-b8-aa-e5-85-83-e4-bb-b6-e6-b7-bb-e5-8a-a0-e5-a4-9a-e4-b8-aapart/">alitum designer给一个元件添加多个part</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/27/fpga-e6-93-8d-e4-bd-9c-e5-9b-9b-e7-ba-bf-e5-88-b6spi-flash-ef-bc-88quad-spi-flash-ef-bc-89-ef-bc-882-ef-bc-89/">FPGA操作四线制SPI FLASH（Quad SPI Flash） （2）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/26/fpga-e6-93-8d-e4-bd-9c-e5-9b-9b-e7-ba-bf-e5-88-b6spi-flash-ef-bc-88quad-spi-flash-ef-bc-89-ef-bc-881-ef-bc-89/">FPGA操作四线制SPI FLASH（Quad SPI Flash） （1）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/23/keil-mdk-e5-92-8c-iar-ewarm-ide-e4-b8-adstl-e5-ae-9e-e7-8e-b0-e7-9a-84-e6-af-94-e8-be-83/">KEIL MDK 和 IAR EWARM IDE中STL实现的比较</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/22/altclkctrl-e4-bd-bf-e7-94-a8-e6-b3-a8-e6-84-8f-e4-ba-8b-e9-a1-b9/">ALTCLKCTRL使用注意事项</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/21/e6-98-8e-e6-99-ba-e5-9c-b0-e5-a4-84-e7-90-86-e5-a4-8d-e4-bd-8d-ef-bc-9a-e8-80-83-e8-99-91-e5-b1-80-e9-83-a8-ef-bc-8c-e8-80-8c-e4-b8-8d-e6-98-af-e5-85-a8-e5-b1-80/">在FPGA中明智地处理复位：考虑局部，而不是全局</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/20/e9-ab-98-e9-80-9f-e7-ba-bf-e9-98-b5ccd-e5-a4-96-e5-be-84-e6-b5-8b-e9-87-8f-e4-bb-aa-e5-8e-9f-e7-90-86-e5-9b-be-e5-ae-8c-e5-b7-a5/">高速线阵CCD外径测量仪原理图完工</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/20/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa68013-to-fpga-e3-80-81quad-spi-flash-e8-bd-ac-e6-9d-bfpcb-e5-ae-8c-e5-b7-a5/">逻辑分析仪68013 to FPGA、QUAD SPI FLASH 转板PCB完工</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/20/sdram-cpld-tft-e9-a9-b1-e5-8a-a8-e5-99-a8-e7-9a-84pcb-e5-b8-83-e5-b1-80-e5-a4-b1-e8-af-af-e4-b8-8e-e7-bb-8f-e9-aa-8c/">SDRAM + CPLD TFT驱动器的PCB布局失误与经验</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/19/e9-87-8d-e6-b8-b8-e6-a1-82-e6-9e-97/">重游桂林</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/17/stm32-jtag-e8-a2-ab-e9-94-81-e4-bd-8f-ef-bc-8c-e8-a7-a3-e9-94-81-e5-8a-9e-e6-b3-95/">STM32 JTAG被锁住，解锁办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/16/wordpress-e6-a8-a1-e6-9d-bf-e4-bf-ae-e6-94-b9-e6-b3-a8-e6-84-8f-e4-ba-8b-e9-a1-b9/">wordpress 模板修改注意事项</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/15/e3-80-8a-e9-bb-91-e5-ae-a2-e4-b8-8e-e7-94-bb-e5-ae-b6-e3-80-8b-e8-af-bb-e4-b9-a6-e7-ac-94-e8-ae-b0/">《黑客与画家》读书笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/15/e6-99-ba-e8-83-bd-e5-ae-b6-e5-b1-85-e8-87-aa-e5-8a-a8-e8-b4-9f-e8-bd-bd-e6-b5-8b-e8-af-95-e3-80-81-e6-b8-a9-e5-9c-ba-e8-b0-83-e8-af-95-e9-80-9a-e7-94-a8-e5-b7-a5-e5-85-b72/">智能家居自动负载测试、温场调试通用工具(2)</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/15/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa68013-to-fpga-e3-80-81quad-spi-flash-e8-bd-ac-e6-9d-bf/">逻辑分析仪68013 to FPGA、QUAD SPI FLASH 转板</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/14/e6-99-ba-e8-83-bd-e5-ae-b6-e5-b1-85-e8-87-aa-e5-8a-a8-e8-b4-9f-e8-bd-bd-e6-b5-8b-e8-af-95-e3-80-81-e6-b8-a9-e5-9c-ba-e8-b0-83-e8-af-95-e9-80-9a-e7-94-a8-e5-b7-a5-e5-85-b7-ef-bc-881-ef-bc-89/">智能家居自动负载测试、温场调试通用工具（1）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/02/e5-9c-a8altium-designer-e4-b8-ad-e5-bf-ab-e9-80-9f-e4-bd-9c-e5-88-b6-e5-8e-9f-e7-90-86-e5-9b-be-e5-b0-81-e8-a3-85/">在Altium Designer中快速作制原理图封装</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/02/quartus-e5-92-8c-modelsim-e4-b8-ad-e7-9a-84-e6-b3-a8-e6-84-8f-e4-ba-8b-e9-a1-b9/">quartus 和 modelsim中的注意事项</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/01/e6-97-b6-e5-ba-8f-e4-bc-98-e5-8c-96-e4-b9-8b-e7-89-a9-e7-90-86-e7-bb-bc-e5-90-88-e4-bc-98-e5-8c-96/">时序优化之物理综合优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/30/e5-85-b3-e4-ba-8e-e6-b5-81-e6-b0-b4-e7-ba-bf-e5-bb-b6-e6-97-b6-e5-85-ac-e5-bc-8f-e7-9a-84-e4-b8-aa-e4-ba-ba-e7-90-86-e8-a7-a3/">关于流水线延时公式的个人理解</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/29/e7-bd-91-e7-ab-99-e6-95-b0-e6-8d-ae-e6-89-93-e5-8c-85-e3-80-81-e5-8e-8b-e7-bc-a9-e5-a4-87-e4-bb-bd/">网站数据打包、压缩备份</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/28/e4-b8-80-e4-b8-aa-e7-ae-80-e5-8d-95-e7-9a-84-e4-bd-8e-e6-88-90-e6-9c-ac5v3-3v-e7-94-b5-e5-b9-b3-e5-8f-8c-e5-90-91-e8-bd-ac-e6-8d-a2-e7-94-b5-e8-b7-af/">一个简单的低成本5V~3.3V电平双向转换电路</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/e6-97-a0-e5-90-8d-e7-9a-84-e4-bb-a3-e7-a0-81/">无名的代码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/e8-87-b4-e7-83-9f-e9-ac-bc-e4-bb-ac/">致烟鬼们</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/wordpress-e9-98-bf-e9-87-8c-e4-ba-91ecs-e4-b8-bb-e6-9c-ba-e5-ae-89-e8-a3-85-e6-ad-a5-e9-aa-a4/">wordpress 阿里云ECS主机安装步骤</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/e8-a7-a3-e5-86-b3mysql-e9-87-8d-e5-90-af-e9-94-99-e8-af-af-e6-8f-90-e7-a4-ba-the-server-quit-without-updating-pid-file/">解决MYSQL重启错误提示 The server quit without updating PID file(…)</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/e6-97-b6-e9-92-9f-e6-8a-96-e5-8a-a8-ef-bc-88clock-jitter-ef-bc-89-e5-92-8c-e6-97-b6-e9-92-9f-e5-81-8f-e7-a7-bb-ef-bc-88clock-skew-ef-bc-89-e7-9a-84-e5-ae-9a-e4-b9-89-ef-bc-8c-e5-8f-8a-e5-85-b6/">时钟抖动（*clock jitter*）和时钟偏移（*clock skew*）的定义，及其对时序的影响</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/24/e5-9c-a8modesim-e4-b8-ad-e4-bb-a5-e5-8f-82-e6-95-b0-e5-90-8d-e6-98-be-e7-a4-ba-e7-8a-b6-e6-80-81-e6-9c-ba-e5-8f-98-e9-87-8f-e7-9a-84-e4-b8-a4-e7-a7-8d-e6-96-b9-e6-b3-95-e5-8f-8a-e6-af-94-e8-be-83/">在modesim中显示状态机变量参数名的两种方法及比较</a></li></ul>
+    <script src="https://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js"></script>
+    <script>
+        $(".post-list").addClass("toc-article");
+        $(".post-list-item a").attr("target","_blank");
+        $("#post-nav-button > a:nth-child(2)").click(function() {
+            $(".fa-bars, .fa-times").toggle();
+            $(".post-list").toggle(300);
+            if ($(".toc").length > 0) {
+                $("#toc, #tocButton").toggle(200, function() {
+                    if ($(".switch-area").is(":visible")) {
+                        $("#tocButton").attr("value", valueHide);
+                        }
+                    })
+            }
+            else {
+            }
+        })
+    </script>
+
+
+
+    <script>
+        
+    </script>
+</div>
+      <footer id="footer">
+    <div class="outer">
+        <div id="footer-info">
+            <div class="footer-left">
+                &copy; 2016 shawge
+            </div>
+            <div class="footer-right">
+                <a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/luuman/hexo-theme-spfk" target="_blank">spfk</a> by luuman
+            </div>
+        </div>
+        
+    </div>
+</footer>
+
+    </div>
+    <script src="https://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js"></script>
+<script src="/js/main.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var backgroundnum = 24;
+            var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
+            $("#mobile-nav").css({"background-image": backgroundimg,"background-size": "cover","background-position": "center"});
+            $(".left-col").css({"background-image": backgroundimg,"background-size": "cover","background-position": "center"});
+        })
+    </script>
+
+
+
+
+
+<div class="scroll" id="scroll">
+    <a href="#"><i class="fa fa-arrow-up"></i></a>
+    <a href="#comments"><i class="fa fa-comments-o"></i></a>
+    <a href="#footer"><i class="fa fa-arrow-down"></i></a>
+</div>
+<script>
+    $(document).ready(function() {
+        if ($("#comments").length < 1) {
+            $("#scroll > a:nth-child(2)").hide();
+        };
+    })
+</script>
+
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+
+  <script language="javascript">
+    $(function() {
+        $("a[title]").each(function() {
+            var a = $(this);
+            var title = a.attr('title');
+            if (title == undefined || title == "") return;
+            a.data('title', title).removeAttr('title').hover(
+
+            function() {
+                var offset = a.offset();
+                $("<div id=\"anchortitlecontainer\"></div>").appendTo($("body")).html(title).css({
+                    top: offset.top - a.outerHeight() - 15,
+                    left: offset.left + a.outerWidth()/2 + 1
+                }).fadeIn(function() {
+                    var pop = $(this);
+                    setTimeout(function() {
+                        pop.remove();
+                    }, pop.text().length * 800);
+                });
+            }, function() {
+                $("#anchortitlecontainer").remove();
+            });
+        });
+    });
+</script>
+
+
+  </div>
+</body>
+</html>

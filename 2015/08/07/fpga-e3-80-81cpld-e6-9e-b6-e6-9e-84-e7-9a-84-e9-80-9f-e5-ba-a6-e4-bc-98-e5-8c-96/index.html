@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>FPGA、CPLD架构的速度优化 | hex55</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="原文：《Advanced FPGA Design Architecture, Implementation, and Optimization》, Architecting Speed
+作者：Steve Kilts
+译者：shawge
+
+对于大多数设计，如果编码风格太过随意，工具常常不足以让设计符合约束。本章主要讨论数字设计中的三大物理特性中的第一点：速度。本章也将讨论FPGA的架构优化方法。
+速">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FPGA、CPLD架构的速度优化">
+<meta property="og:url" content="http://hex55.com/2015/08/07/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-80-9f-e5-ba-a6-e4-bc-98-e5-8c-96/index.html">
+<meta property="og:site_name" content="hex55">
+<meta property="og:description" content="原文：《Advanced FPGA Design Architecture, Implementation, and Optimization》, Architecting Speed
+作者：Steve Kilts
+译者：shawge
+
+对于大多数设计，如果编码风格太过随意，工具常常不足以让设计符合约束。本章主要讨论数字设计中的三大物理特性中的第一点：速度。本章也将讨论FPGA的架构优化方法。
+速">
+<meta property="og:image" content="http://hex55.com/uploads/2015/07/2015-07-03_185649.png">
+<meta property="og:updated_time" content="2016-07-19T00:29:50.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FPGA、CPLD架构的速度优化">
+<meta name="twitter:description" content="原文：《Advanced FPGA Design Architecture, Implementation, and Optimization》, Architecting Speed
+作者：Steve Kilts
+译者：shawge
+
+对于大多数设计，如果编码风格太过随意，工具常常不足以让设计符合约束。本章主要讨论数字设计中的三大物理特性中的第一点：速度。本章也将讨论FPGA的架构优化方法。
+速">
+<meta name="twitter:image" content="http://hex55.com/uploads/2015/07/2015-07-03_185649.png">
+  
+    <link rel="alternative" href="/atom.xml" title="hex55" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.png">
+  
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  
+  
+      <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  
+  <!-- 加载特效 -->
+    <script src="/js/pace.js"></script>
+    <link href="/css/pace/pace-theme-flash.css" rel="stylesheet" />
+  <script>
+      var yiliaConfig = {
+          fancybox: true,
+          animate: false,
+          isHome: false,
+          isPost: true,
+          isArchive: false,
+          isTag: false,
+          isCategory: false,
+          open_in_new: false
+      }
+  </script>
+</head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+    <header id="header" class="inner">
+        <a href="/" class="profilepic">
+            
+            <img src="/img/head.jpg" class="js-avatar" style="width: 100%;height: 100%;opacity: 1;">
+            
+        </a>
+
+        <hgroup>
+          <h1 class="header-author"><a href="/">shawge</a></h1>
+        </hgroup>
+
+        
+        <p class="header-subtitle">shawge的电子技术分享</p>
+        
+        
+        
+            <div id="switch-btn" class="switch-btn">
+                <div class="icon">
+                    <div class="icon-ctn">
+                        <div class="icon-wrap icon-house" data-idx="0">
+                            <div class="birdhouse"></div>
+                            <div class="birdhouse_holes"></div>
+                        </div>
+                        <div class="icon-wrap icon-ribbon hide" data-idx="1">
+                            <div class="ribbon"></div>
+                        </div>
+                        
+                        
+                        <div class="icon-wrap icon-me hide" data-idx="3">
+                            <div class="user"></div>
+                            <div class="shoulder"></div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="tips-box hide">
+                    <div class="tips-arrow"></div>
+                    <ul class="tips-inner">
+                        <li>菜单</li>
+                        <li>标签</li>
+                        
+                        
+                        <li>关于我</li>
+                        
+                    </ul>
+                </div>
+            </div>
+        
+
+        <div id="switch-area" class="switch-area">
+            <div class="switch-wrap">
+                <section class="switch-part switch-part1">
+                    <nav class="header-menu">
+                        <ul>
+                        
+                            <li><a href="/">博客首页</a></li>
+                        
+                            <li><a href="/categories/MCU-ARM/">MCU/ARM</a></li>
+                        
+                            <li><a href="/categories/FPGA/">FPGA</a></li>
+                        
+                            <li><a href="/categories/windows-linux/">WINDOWS/LINUX</a></li>
+                        
+                            <li><a href="/categories/硬件设计/">硬件设计</a></li>
+                        
+                            <li><a href="/archives/">归档</a></li>
+                        
+                        </ul>
+                    </nav>
+                    <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fl mail" target="_blank" href="http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=27O_o_7um6qq9bi0tg" title="mail">mail</a>
+                            
+                                <a class="fl rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+                            
+                        </ul>
+                    </nav>
+                </section>
+                
+                
+                <section class="switch-part switch-part2">
+                    <div class="widget tagcloud" id="js-tagcloud">
+                        <a href="/tags/github-提速/" style="font-size: 10px;">github 提速</a>
+                    </div>
+                </section>
+                
+                
+                
+
+                
+                
+                <section class="switch-part switch-part3">
+                
+                    <div id="js-aboutme">没想好。。。</div>
+                </section>
+                
+            </div>
+        </div>
+    </header>                
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+      <div class="overlay">
+          <div class="slider-trigger"></div>
+          <h1 class="header-author js-mobile-header hide"><a href="/" title="回到主页">shawge</a></h1>
+      </div>
+    <div class="intrude-less">
+        <header id="header" class="inner">
+            <a href="/" class="profilepic">
+                
+                    <img src="/img/head.jpg" class="js-avatar" style="width: 100%; height: 100%; opacity: 1;">
+                
+            </a>
+            <hgroup>
+              <h1 class="header-author"><a href="/" title="回到主页">shawge</a></h1>
+            </hgroup>
+            
+            <p class="header-subtitle">shawge的电子技术分享</p>
+            
+            <nav class="header-menu">
+                <ul>
+                
+                    <li><a href="/">博客首页</a></li>
+                
+                    <li><a href="/categories/MCU-ARM/">MCU/ARM</a></li>
+                
+                    <li><a href="/categories/FPGA/">FPGA</a></li>
+                
+                    <li><a href="/categories/windows-linux/">WINDOWS/LINUX</a></li>
+                
+                    <li><a href="/categories/硬件设计/">硬件设计</a></li>
+                
+                    <li><a href="/archives/">归档</a></li>
+                
+                <div class="clearfix"></div>
+                </ul>
+            </nav>
+            <nav class="header-nav">
+                <div class="social">
+                    
+                        <a class="mail" target="_blank" href="http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=27O_o_7um6qq9bi0tg" title="mail">mail</a>
+                    
+                        <a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+                    
+                </div>
+            </nav>
+        </header>                
+    </div>
+</nav>
+      <div class="body-wrap"><article id="post-fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-80-9f-e5-ba-a6-e4-bc-98-e5-8c-96" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2015/08/07/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-80-9f-e5-ba-a6-e4-bc-98-e5-8c-96/" class="article-date">
+      <time datetime="2015-08-07T00:24:41.000Z" itemprop="datePublished">2015-08-07</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      FPGA、CPLD架构的速度优化
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/FPGA/">FPGA</a>
+    </div>
+
+
+        
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+          
+        <p>原文：《Advanced FPGA Design Architecture, Implementation, and Optimization》, Architecting Speed</p>
+<p>作者：Steve Kilts</p>
+<p>译者：shawge</p>
+<hr>
+<p>对于大多数设计，如果编码风格太过随意，工具常常不足以让设计符合约束。本章主要讨论数字设计中的三大物理特性中的第一点：速度。本章也将讨论FPGA的架构优化方法。</p>
+<p>速度有以下三种主要的定义：吞吐量，延迟，时序。在FPGA数据处理中，吞吐量是指每个时钟周期处理的数据量。通常用比特每秒（bits per second）来量化。延迟是指从数据输入到数据输出所需要的时间。常用时间或者是时钟数来量化。时序是指串行元件之间的延时。当我们说一个设计不符合时序时，这意味着关键路么的延时，即寄存器之间的最大延时（由组合逻辑延时，输出延时，布线延时，建立时序，时钟倾斜等等组成）比目标时钟周期更大。典型的量化单位是时钟周期和频率。</p>
+<p>本章我们将详细讨论以下几点:</p>
+<ul>
+<li>高吞吐量，最大化对该设计每秒能够处理的比特数。</li>
+<li>延迟，最小化模块从输入到输出有效的时间。</li>
+<li><p>时序优化，降低关键路径的组合延时。</p>
+<p>在组合逻辑中添加寄存器层。<br>将无关联的串行执行结构并行化。<br>展平具有优先级的逻辑结构。<br>通过重新分配流水线周围的组合逻辑实现寄存器平衡。<br>通过路径重排序将关键路径中的一些操作转移到非关键路径中。</p><p></p>
+</li>
+</ul>
+<hr>
+<h2 id="1-1-高吞吐量"><a href="#1-1-高吞吐量" class="headerlink" title="1.1 高吞吐量"></a>1.1 高吞吐量</h2><p></p><p>一个高吞吐量的设计主要关注稳定的数据速率，而较少关注具体数据片通过设计的传输时间（延时）。高吞吐量的设计思想与福特所想到的通过装配线来实现大量汽车生产的想法是一致的。在数据处理的数字设计世界里，我们往往用一个更抽象的词汇：流水线。</p>
+<p>流水线的设计概念作品非常类似于装配线，原料或者数据从前端输入，然后通过各个阶断的操作和处理，最后生成产品或者数据输出。流水线的妙处在于前面数据处理完前新的数据已经在被处理，非常像汽车在装置线上被处理的过程。流水线在几乎所有的高性能设备中被采用，而与具体形式无关。例如CPU指令集，网络协议栈，加密引擎等等。</p>
+<p>从算法角度看，流水线的一个重要理念就是展开循环。例如下面这个代码段常常用来在软件中实现X的三次乘方处理。注意，与这段代码相关的软件是在一个微处理器中通过指令执行的。</p>
+<pre><code>XPower = 1;
+for (i=0;i &amp;lt; 3; i++)
+    XPower = X * XPower;
+`&lt;/pre&gt;
+
+注意，以上的代码是一个迭代处理。同样的变量和地址被访问直到计算完成。因为微处理器一次只能执行一条指令（为便于讨论，只考虑单核处理器）所以在这里没有使用并行。在硬件上可以创建一个类似的实现。看看以下的verilog代码，它完成同上面相同的算法（不考虑输出范围）:
+
+&lt;pre&gt;`module power3(
+output [7:0] XPower,
+output finished,
+input [7:0] X,
+input clk, start); // the duration of start is a
+single clock
+reg [7:0] ncount;
+reg [7:0] XPower;
+assign finished = (ncount == 0);
+always@(posedge clk)
+    if(start) begin
+        XPower &amp;lt;= X;
+        ncount &amp;lt;= 2;
+    end
+    else if(!finished) begin
+        ncount &amp;lt;= ncount - 1;
+        XPower &amp;lt;= XPower * X;
+    end
+endmodule
+`&lt;/pre&gt;
+
+在上面这个例子中，同样的寄存器和计算资源被使用直到整个计算完成,如图1.1。
+
+![](
+</code></pre><p>/uploads/2015/07/2015-07-03_141054.png)</p>
+<pre><code>在这种类型的迭代计实现中，直到前一个计算完成才能有新的计算开始。这个迭代原理非常类似软件实现。还要注意到，需要某些握手信号去指示计算的开始和完成。一个外部模块也需要用一个握手信号去给这个模块传递数据和接收计算结果。这个实现的性能如下：
+
+吞吐量 = 8/3, 或 2.7bit/clock
+
+延迟 = 3 clock
+
+时序 = 关键路径上的一个乘法器延时
+
+对比相同算法的流水线版本：
+
+&lt;pre&gt;`module power3(
+    output reg [7:0] XPower,
+    input clk,
+    input [7:0] X
+    );
+    reg [7:0] XPower1, XPower2;
+    reg [7:0] X1, X2;
+
+    always @(posedge clk) begin
+        // Pipeline stage 1
+        X1 &amp;lt;= X;
+        XPower1 &amp;lt;= X;
+        // Pipeline stage 2
+        X2 &amp;lt;= X1;
+        XPower2 &amp;lt;= XPower1 * X1;
+        // Pipeline stage 3
+        XPower &amp;lt;= XPower2 * X2;
+    end
+endmodule
+
+`&lt;/pre&gt;
+
+在上面这个实现中，X的值被送到两个流水阶段，分别采用独立的资源去计算乘法。注意，当X被用来在第二个流水线阶段去计算最终的3次乘方时，下一个X的值已能被送往第一个流水阶段，如图1.2。
+
+![](
+</code></pre><p>/uploads/2015/07/2015-07-03_134305.png)</p>
+<pre><code>计算2次方和计算三次方的过程同时执行。这个设计性能如下：
+
+吞吐量 = 8/1， 或 8 bits/clock
+
+延时 = 3 clocks
+
+时序 = 关键路径上的一个乘法器延时
+
+吞吐量性能相比于迭代方式实现提高了三倍。一般来讲，如果一个算法有n次迭代循不环被展开，流水线实现将会让吞吐量提高n倍。在延时方面则没有什么优劣，因为流水线实现仍然需要3个时钟来填充流水线。同样，在时序方面也没什么优劣，仍然只有一个乘法器延时。
+
+**展开迭代循环将增加吞吐量。**
+
+展开循环所带来的代价是增加了面积。迭代实现只需要一个寄存器和一个乘法器（还伴随一些没有在框图中展示的控制逻辑），而流水线实现则要求为X和XPower分别提供独立的寄存器，并且每个流水阶段都要一个乘法器。面积的优化将在第2章中讨论。
+
+**展开迭代循环，面积将成比例增加**
+
+## 1.2 低延时
+
+低延时设计是让数据从输入到输出尽可能快地通过，通过最小化中间处理延时。通常一个低延时设计将会要求并行，移除流水线，还有会降低设计吞吐量和最大时钟速度的逻辑捷径。
+
+回顾一下求三次方的例子，显然不能对迭代作任何延时优化，因为为了下一个操作每一个相继的乘法操作都需要被寄存。但是，流水现实现却有一个清晰的降低延时的方法。注意到在每一个流水阶段，每个乘法器的结果都必须等到下一个时钟沿才能传递给下一级。移除流水寄存器，就能最小化输入输出时序：
+
+&lt;pre&gt;`
+module power3(
+    output [7:0] XPower,
+    input [7:0] X
+    );
+    reg [7:0] XPower1, XPower2;
+    reg [7:0] X1, X2;
+    assign XPower = XPower2 * X2;
+
+    always @* begin
+        X1 = X;
+        XPower1 = X;
+    end
+
+    always @* begin
+        X2 = X1;
+        XPower2 = XPower1*X1;
+    end
+endmodule
+
+`&lt;/pre&gt;
+
+在上面这个例子中，寄存器被从流水中线剥离出来。每个阶段都是前一个阶段的组合表达式，如图1.3
+
+![](
+</code></pre><p>/uploads/2015/07/2015-07-03_150325.png)</p>
+<pre><code>设计性能如下：
+
+吞吐量 = 8 bits/clock(假定每个时钟只输入一个新数据)
+
+延时 = 一到两个乘法器的延时，0 clocks
+
+时序 = 关键路径上的两个乘法器延时
+
+通过移除流水线寄存器，我们将这个设计的延时降低到了一个时钟周期。
+
+**移除流水线寄存器能够降低延时**
+
+在时序方面的劣势显而易见，原先的实现理论上能够让系统的时钟周期接近一个乘法器的延时，但是在低延时实中中，时钟周期必须至少是两个乘法器延时（取决于具体实现）加上在关键路径上的任何逻辑延时。
+
+**移除流水线寄存器的劣势是增加了寄存器之间的组合延时**
+
+## 1.3 时序
+
+时序是指一个设计时钟速度。在设计中的任何两个串行元件间的最大延时决定了最大时钟速度。理想的时钟速度是比较简单的抽象，速度/面积平衡我们将在别处讨论，本章只是考虑一般的时钟速度，与这些拓扑结构无直接关系，虽然这些架构的取舍肯定会对时序产生影响。例如在不知道具体实现细节的情况下，没有人敢肯定地说流水线实现就一定比迭代实现更快。最大的速度，或最大频率，由下面这个公认的简单最大频率方程定义（不考虑时钟抖动）:
+
+![](
+</code></pre><p>/uploads/2015/07/2015-07-03_153327.png)</p>
+<pre><code>式中F&amp;#95;max是所允许的最大时钟频率；T&amp;#95;clk-q是从时钟抵达到数据抵达Q（译者注：触发器输出延时）； T&amp;#95;logic是触发器之间的逻辑传播延时；T&amp;#95;rounging是触发器之间的布线延时;T&amp;#95;setup是在下一时钟沿到来前数据必须抵达的最小时间(建立时间)；T&amp;#95;skew是发射触发器和捕获触发器之间的时钟传捕延时（译者注：时钟倾斜）。
+
+下一节描述提高时序性能的各种方法及取舍之道。
+
+### 1.3.1 添加寄存器层
+
+第一个提高时序性能的策略是在关键路径上增加寄存器。这一技术应该在流水线设计中被高度应用，前提是增加额外的延迟不会违反设计要求，并且总体功能也不受进一步增中的寄存器影响。
+
+举个例子，假定如下的FIR（有限脉冲响应滤波器）实现不符合时序：
+
+&lt;pre&gt;`module fir(
+    output [7:0] Y,
+    input [7:0] A, B, C, X, 
+    input clk,
+    input validsample);
+
+reg [7:0] X1, X2, Y;
+
+always @(posedge clk)
+    if(validsample) begin
+        X1 &amp;lt;= X;
+        X2 &amp;lt;= x1;
+        Y1 &amp;lt;= A * X + B * X1 + C * X2;
+    end
+
+endmodule
+`&lt;/pre&gt;
+
+在结构上，所有乘/加运算发生在一个时钟周期如图所示1.4。
+
+![](
+</code></pre><p>/uploads/2015/07/2015-07-03_160903.png)</p>
+<pre><code>换句话说，关键路径上的一个乘法器和一个加法器的延时比所要求的最小时钟周期大。假定不要求延时是固定的一个时钟，我们就能够通过在乘法器后添加寄存器来让设计流水线化。第一步比较简单: 只要在乘法器和加法器之间添加流水层即可:
+
+&lt;pre&gt;`module fir(
+    output [7:0] Y,
+    input [7:0] A, B, C, X,
+    input clk,
+    input validsample);
+    reg [7:0] X1, X2, Y;
+    reg [7:0] prod1, prod2, prod3;
+
+    always @ (posedge clk) begin
+    if(validsample) begin
+        X1 &amp;lt;= X;
+        X2 &amp;lt;= X1;
+        prod1 &amp;lt;= A * X;
+        prod2 &amp;lt;= B * X1;
+        prod3 &amp;lt;= C * X2;
+        end
+        Y &amp;lt;= prod1 + prod2 + prod3;
+    end
+endmodule
+`&lt;/pre&gt;
+
+在上面这个例子中，乘法器被流水线隔离了，如图1.5。
+
+![](
+</code></pre><p>/uploads/2015/07/2015-07-03_161232.png)</p>
+<pre><code>乘法器是很好的流水化候选，因为计算很容易被分阶段完成。通过独立寄存化把乘法和加法分段进行。
+
+**通过添加寄存器层将关键路径分解成两个较小延时的路径来提升时序**
+
+这种功能的各种实现涵盖在其他章节，但是一旦架构被分段，更多的流水线就像上面的例子一样简单。
+
+### 1.3.2 并行化
+
+第二个提升架构时序的策略是重组关键路径，使得逻辑结构能并行实现。当一个功能当前以可被分解的串行逻辑进行评估时，可以应用这一技术进行并行评估。举个例子，假如在前一节中讨论过的求三次方的标准流水实现不符合时序要求。为了创建并行结构，我们能够将乘法器分割成独立的操作，然后重组它们。例如，一个8-bit的二进制乘法器可以通过半字A和B表示：
+
+X = {A, B}，
+
+式中A是高半字，B是低半字。
+
+由于在求三次方的例子中被乘法等于乘数，所以乘法操作能够如下重组：
+
+X &amp;#42; X = {A，B} &amp;#42; {A, B} = {(A &amp;#42; A), (2 &amp;#42; A &amp;#42; B), (B &amp;#42; B)};
+
+这将我们的问题降低成了一串4-bit乘法器，然后重组他们的结果。实现如下模块：
+
+&lt;pre&gt;`module power3(
+    output [7:0] XPower,
+    input [7:0] X,
+    input clk);
+    reg [7:0] XPower1;
+    // partial product registers
+    reg [3:0] XPower2_ppAA, XPower2_ppAB, XPower2_ppBB;
+    reg [3:0] XPower3_ppAA, XPower3_ppAB, XPower3_ppBB;
+    reg [7:0] X1, X2;
+    wire [7:0] XPower2;
+    // nibbles for partial products (A is MS nibble, B is LS
+    nibble)
+    wire [3:0] XPower1_A = XPower1[7:4];
+    wire [3:0] XPower1_B = XPower1[3:0];
+    wire [3:0] X1_A = X1[7:4];
+    wire [3:0] X1_B = X1[3:0];
+    wire [3:0] XPower2_A = XPower2[7:4];
+    wire [3:0] XPower2_B = XPower2[3:0];
+    wire [3:0] X2_A = X2[7:4];
+    wire [3:0] X2_B = X2[3:0];
+    // assemble partial products
+    assign XPower2 = (XPower2_ppAA &amp;lt;&amp;lt; 8)+
+        (2*XPower2_ppAB &amp;lt;&amp;lt; 4)+
+        XPower2_ppBB;
+    assign XPower = (XPower3_ppAA &amp;lt;&amp;lt; 8)+
+        (2*XPower3_ppAB &amp;lt;&amp;lt; 4)+
+        XPower3_ppBB;
+    always @(posedge clk) begin
+        // Pipeline stage 1
+        X1 &amp;lt;= X;
+        XPower1 &amp;lt;= X;
+        // Pipeline stage 2
+        X2 &amp;lt;= X1;
+        // create partial products
+        XPower2_ppAA &amp;lt;= XPower1_A * X1_A;
+        XPower2_ppAB &amp;lt;= XPower1_A * X1_B;
+        XPower2_ppBB &amp;lt;= XPower1_B * X1_B;
+        // Pipeline stage 3
+        // create partial products
+        XPower3_ppAA &amp;lt;= XPower2_A * X2_A;
+        XPower3_ppAB &amp;lt;= XPower2_A * X2_B;
+        XPower3_ppBB &amp;lt;= XPower2_B * X2_B;
+    end
+endmodule
+
+`&lt;/pre&gt;
+
+这个设计没有考虑溢出，但是它说明了本节的要点。如图1.6，乘法器被分割成能被独立操作的较小模块。
+
+![](
+</code></pre><p>/uploads/2015/07/2015-07-03_170158.png)</p>
+<pre><code>通过将乘法操作分割成能并行执行的较小操作，最大延时降低为所有子结构的最长延时。
+
+**将功能分离为多个能并行执的较小功能，能够将路径延时降低为所有子结构的最长延时**
+
+### 1.3.3 展平逻辑结构
+
+第三个去提升时序性能的策略是展平逻辑结构。这与上一节结构并行化的定义非常类似，但是特别适用于具有优先级逻辑链的结构。通常，综合和布线工具足以智能地去复制逻辑以减少扇出，但是它们的智能还不足以打破被串行编码的逻辑结构，它们也没有与设计优先级要求相关的信息。举个例子，如下的信号来自一个地址编码器，它们被用于去写四个寄存器：
+
+&lt;pre&gt;`module regwrite(
+    output reg [3:0] rout,
+    input clk, in,
+    input [3:0] ctrl);
+    always @(posedge clk)
+        if(ctrl[0]) rout[0] &amp;lt;= in;
+        else if(ctrl[1]) rout[1] &amp;lt;= in;
+        else if(ctrl[2]) rout[2] &amp;lt;= in;
+        else if(ctrl[3]) rout[3] &amp;lt;= in;
+endmodule
+`&lt;/pre&gt;
+
+在上面这个例子中，每个信号被编码成与其它信号有优先关系。这种优先级编码的实现结构如图1.7。
+
+![](
+</code></pre><p>/uploads/2015/07/2015-07-03_172111.png)</p>
+<pre><code>如果控制线是被另一个模块中的地址解码器译码，那么每一个编码是与其它编码互斥平等的，因为它们代表唯一地址。然而如果按我们这种编码来它就是有优先级的。由于信号是控制信号，上面的代码的操作就像它是被并行编码，但是综合工具不足以智能到注意到这一点，特别是如果地址译码器是在其它寄存器层的后面。
+
+移除优先级，展平逻辑后的模块代码如下：
+
+&lt;pre&gt;`module regwrite(
+    output reg [3:0] rout,
+    input clk, in,
+    input [3:0] ctrl);
+    always @(posedge clk) begin
+        if(ctrl[0]) rout[0] &amp;lt;= in;
+        if(ctrl[1]) rout[1] &amp;lt;= in;
+        if(ctrl[2]) rout[2] &amp;lt;= in;
+        if(ctrl[3]) rout[3] &amp;lt;= in;
+    end
+endmodule
+`&lt;/pre&gt;
+
+如图1.8，可以看到门级实现没有任何优先级逻辑。每一个控制信号独立地控制了输出位。
+
+![](
+</code></pre><p>/uploads/2015/07/2015-07-03_174140.png)</p>
+<pre><code>**通过移除没有必要的优先级编码，逻辑结构可以被展平，并且路径延时将会降低。**
+
+### 1.3.4 寄存器平衡
+
+第四策略叫寄存器平衡。从概念上讲，这个想法是均匀的重新分配寄存器之间的逻辑，以达到最小化两个寄存器之间的最坏延时。当关键路径和相邻路径之间的逻辑高度不平衡时可以使用这个技术。因为时钟速度只取决于最差路径，可能只需要一个小小的改变就能成功地重新平衡关键逻辑。
+
+很多综合工具也有一个叫作寄存器平衡的选项。这个功能主要是以预定的方式识别特定的结构并重新放置该结构周围的寄存器。这对常见的结构如大乘法器是有用的，但是它的功能有限，并且它不会改变你的逻辑，也不能识别自定义结构。依赖该技术，则可能需要更为昂贵的综合工具去实现。因此理解这个概念是非常重要的，并且必须具备重新分配自定义结构逻辑的能力。
+
+看看下面的代码，它是一个有三个8-bit输入的加法器:
+
+&lt;pre&gt;`module adder(
+    output reg [7:0] Sum,
+    input [7:0] A, B, C,
+    input clk);
+    reg [7:0] rA, rB, rC;
+    always @(posedge clk) begin
+        rA &amp;lt;= A;
+        rB &amp;lt;= B;
+        rC &amp;lt;= C;
+        Sum &amp;lt;= rA + rB + rC;
+    end
+endmodule
+`&lt;/pre&gt;
+
+第一个寄存器段包括rA， rB 和 rC，第二段包括Sum。在第一段和第二段之间的逻辑是用于所有输入的加法器，在输入和第一寄存器段之间不包含任何逻辑（假定这个模块的输出反馈是寄存器化的）如图1.9。
+
+![](
+</code></pre><p>/uploads/2015/07/2015-07-03_180133.png)</p>
+<pre><code>如果关键路径被定义为加法器，一些关键路径上的逻辑可以被移回一段，从而实现两个寄存器段之间的逻辑平衡。参见如下的修正，一个加法操作被移回了一段:
+
+&lt;pre&gt;`module adder(
+    output reg [7:0] Sum,
+    input [7:0] A, B, C,
+    input clk);
+    reg [7:0] rABSum, rC;
+    always @(posedge clk) begin
+        rABSum &amp;lt;= A + B;
+        rC &amp;lt;= C;
+        Sum &amp;lt;= rABSum + rC;
+    end
+endmodule
+`&lt;/pre&gt;
+
+现在，我们把一个加法器回移到了输入和第一寄存器段之间。这平衡了流水线，并且减少关键路径，如图1.10。
+
+**寄存器平衡能够提升时序性能，通过将关键路径上的组合逻辑移到相邻路径来实现**
+
+![](
+</code></pre><p>/uploads/2015/07/2015-07-03_180934.png)</p>
+<pre><code>### 1.3.5 路径重排
+
+第五个策略是重排数据路径，以最小化关键路径。当有多个由关键路径组成的路径，并且这些组合路径可以被重排，使得关键路径能被移至离目的寄存器更近，那么可以使用这一技术。在这个策略中，我们只考虑任何给定寄存器之间逻辑。看看如下模块：
+
+&lt;pre&gt;`
+module randomlogic(
+    output reg [7:0] Out,
+    input [7:0] A, B, C,
+    input clk,
+    input Cond1, Cond2);
+
+    always @(posedge clk)
+    if(Cond1)
+        Out &amp;lt;= A;
+    else if(Cond2 &amp;amp;&amp;amp; (C &amp;lt; 8))
+        Out &amp;lt;= B;
+    else
+        Out &amp;lt;= C;
+endmodule
+
+`&lt;/pre&gt;
+
+![](
+</code></pre><p>/uploads/2015/07/2015-07-03_184854.png)</p>
+<pre><code>在这个例子中，我们假定C和输出之间是关键路径，在抵达目的选择器前它包含一个比较器以及串联着的两个门电路。如图1.11。假定条件并不互斥，我们可以修改代码重排长延时的比较器:
+
+&lt;pre&gt;`
+module randomlogic(
+    output reg [7:0] Out,
+    input [7:0] A, B, C,
+    input clk,
+    input Cond1, Cond2);
+    wire CondB = (Cond2 &amp;amp; !Cond1);
+
+    always @(posedge clk)
+    if(CondB &amp;amp;&amp;amp; (C &amp;lt; 8))
+        Out &amp;lt;= B;
+    else if(Cond1)
+        Out &amp;lt;= A;
+    else
+        Out &amp;lt;= C;
+endmodule
+</code></pre><p>经过重组代码，我们把一个门电路移到了与比较器串联着的关键路径之外，如图1.12。因此，通过仔细查看有无特定结构的代码，我们能够直接影响时序性能。</p>
+<p><img src="/uploads/2015/07/2015-07-03_185649.png" alt=""></p>
+<p><strong>时序性能可以被提高，通过重排序关键路径上的组合逻辑，依靠这种方式能够让关键路径更逼近目标寄存器。</strong></p>
+<h2 id="1-4-关键点汇总"><a href="#1-4-关键点汇总" class="headerlink" title="1.4 关键点汇总"></a>1.4 关键点汇总</h2><ul>
+<li>高吞吐量架构是指最大化设计每秒能够处理的比特数。</li>
+<li>展开迭代循环能够提高吞吐量。</li>
+<li>展开迭代循环的代价是增加了资源消耗面积。</li>
+<li>低延时架构是指最小化模块从输入到输出所需的时间。</li>
+<li>通过移除流水线寄存器可以减小输出延时。</li>
+<li>移除流水线寄存器的代价是增加了寄存器之间的组合逻辑延时。</li>
+<li>时序是指一个设计的时钟速度。当一个设计的任意两个串行元件之间的最大延时小于最小的时钟周期时，时序收敛。</li>
+<li>增加寄存器层可以提升时序，通过打断关键路径，将其分割成到两条较小的延时路径来实现。</li>
+<li>将一个逻辑功能分离成若干个可以独立并行执行的能够让路径延时降低为所有子结构的最长延时。</li>
+<li>通过移除不必要的优先级编码，逻辑结构被展平，路径延时被减小。</li>
+<li>寄存器平衡能够提升时序，通过将关键路径里的组合逻辑移至相邻的路径来实现。</li>
+<li>时序可以过重排路径提升，通过重排由关键路径组成的路径，让关键路径更靠近目的寄存器来实现。</li>
+</ul>
+
+      
+    </div>
+    
+  </div>
+  
+    
+    <div class="copyright">
+        <p><span>本文标题:</span><a href="/2015/08/07/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-80-9f-e5-ba-a6-e4-bc-98-e5-8c-96/">FPGA、CPLD架构的速度优化</a></p>
+        <p><span>文章作者:</span><a href="/" title="访问 shawge 的个人博客">shawge</a></p>
+        <p><span>发布时间:</span>2015年08月07日 - 08时24分</p>
+        <p><span>最后更新:</span>2016年07月19日 - 08时29分</p>
+        <p>
+            <span>原始链接:</span><a class="post-url" href="/2015/08/07/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-80-9f-e5-ba-a6-e4-bc-98-e5-8c-96/" title="FPGA、CPLD架构的速度优化">http://hex55.com/2015/08/07/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-80-9f-e5-ba-a6-e4-bc-98-e5-8c-96/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://hex55.com/2015/08/07/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-80-9f-e5-ba-a6-e4-bc-98-e5-8c-96/　　作者: shawge" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <script src="/js/clipboard.min.js"></script>
+            <script> var clipboard = new Clipboard('.copy-path'); </script>
+        </p>
+        <p>
+            <span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" title="中国大陆 (CC BY-NC-SA 3.0 CN)" target = "_blank">"署名-非商用-相同方式共享 3.0"</a> 转载请保留原文链接及作者。
+        </p>
+    </div>
+
+
+
+<nav id="article-nav">
+  
+    <a href="/2015/08/07/e3-80-8a-e7-96-af-e7-8b-82-e7-9a-84-e6-8a-95-e8-b5-84-e8-b7-a8-e8-b6-8a-e5-a4-a7-e8-a5-bf-e6-b4-8b-e7-94-b5-e7-bc-86-e7-9a-84-e5-95-86-e4-b8-9a-e4-bc-a0-e5-a5-87-e3-80-8b-e8-af-bb/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption"><</strong>
+      <div class="article-nav-title">
+        
+          《疯狂的投资——跨越大西洋电缆的商业传奇》读书笔记
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/08/05/e9-ab-98-e9-80-9f-e7-ba-a2-e5-a4-96-e7-ba-bf-e9-98-b5ccd-e6-b5-8b-e5-be-84-e4-bb-aapcb-e5-ae-8c-e5-b7-a5/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">高速红外线阵CCD测径仪PCB完工</div>
+      <strong class="article-nav-caption">></strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+    <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-高吞吐量"><span class="toc-number">1.</span> <span class="toc-text">1.1 高吞吐量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-4-关键点汇总"><span class="toc-number">2.</span> <span class="toc-text">1.4 关键点汇总</span></a></li></ol>
+</div>
+<input type="button" id="tocButton" value="隐藏目录"  title="点击按钮隐藏或者显示文章目录">
+
+<script src="https://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js"></script>
+<script>
+    var valueHide = "隐藏目录";
+    var valueShow = "显示目录";
+
+    if ($(".left-col").is(":hidden")) {
+        $("#tocButton").attr("value", valueShow);
+    }
+    $("#tocButton").click(function() {
+        if ($("#toc").is(":hidden")) {
+            $("#tocButton").attr("value", valueHide);
+            $("#toc").slideDown(320);
+        }
+        else {
+            $("#tocButton").attr("value", valueShow);
+            $("#toc").slideUp(350);
+        }
+    })
+    if ($(".toc").length < 1) {
+        $("#toc, #tocButton").hide();
+    }
+</script>
+
+
+
+
+
+<div class="bdsharebuttonbox">
+	<a href="#" class="fx fa-weibo bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+	<a href="#" class="fx fa-weixin bds_weixin" data-cmd="weixin" title="分享到微信"></a>
+	<a href="#" class="fx fa-qq bds_sqq" data-cmd="sqq" title="分享到QQ好友"></a>
+	<a href="#" class="fx fa-facebook-official bds_fbook" data-cmd="fbook" title="分享到Facebook"></a>
+	<a href="#" class="fx fa-twitter bds_twi" data-cmd="twi" title="分享到Twitter"></a>
+	<a href="#" class="fx fa-linkedin bds_linkedin" data-cmd="linkedin" title="分享到linkedin"></a>
+	<a href="#" class="fx fa-files-o bds_copy" data-cmd="copy" title="分享到复制网址"></a>
+</div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"2","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+
+
+
+
+    
+      <div class="duoshuo" id="comments">
+    <!-- 多说评论框 start -->
+    <div class="ds-thread" data-thread-key="2015/08/07/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-80-9f-e5-ba-a6-e4-bc-98-e5-8c-96/" data-title="FPGA、CPLD架构的速度优化" data-url="http://hex55.com/2015/08/07/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-80-9f-e5-ba-a6-e4-bc-98-e5-8c-96/"></div>
+    <!-- 多说评论框 end -->
+    <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+    <script type="text/javascript">
+    var duoshuoQuery = {short_name:"hex55"};
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = '/js/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0] 
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+    <!-- 多说公共JS代码 end -->
+</div>
+
+    
+
+
+
+    <div class="scroll" id="post-nav-button">
+        
+            <a href="/2015/08/07/e3-80-8a-e7-96-af-e7-8b-82-e7-9a-84-e6-8a-95-e8-b5-84-e8-b7-a8-e8-b6-8a-e5-a4-a7-e8-a5-bf-e6-b4-8b-e7-94-b5-e7-bc-86-e7-9a-84-e5-95-86-e4-b8-9a-e4-bc-a0-e5-a5-87-e3-80-8b-e8-af-bb/" title="上一篇: 《疯狂的投资——跨越大西洋电缆的商业传奇》读书笔记">
+                <i class="fa fa-angle-left"></i>
+            </a>
+        
+        <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
+        
+            <a href="/2015/08/05/e9-ab-98-e9-80-9f-e7-ba-a2-e5-a4-96-e7-ba-bf-e9-98-b5ccd-e6-b5-8b-e5-be-84-e4-bb-aapcb-e5-ae-8c-e5-b7-a5/" title="下一篇: 高速红外线阵CCD测径仪PCB完工">
+                <i class="fa fa-angle-right"></i>
+            </a>
+        
+    </div>
+    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2016/07/29/git-push到github提速解决办法/">git push到github提速解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/09/e8-a7-a3-e5-86-b3python-e6-89-93-e5-8c-85-no-module-named-xxx/">解决python 打包 No module named 'XXX'</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/08/cc-e5-86-85-e5-b5-8cpython-e6-89-93-e5-8c-85-e5-8f-91-e5-b8-83/">c/c++内嵌python打包发布</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/06/e8-a7-a3-e5-86-b3failed-to-load-platform-plugin-windows/">解决failed-to-load-platform-plugin-windows</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/04/e8-a7-a3-e5-86-b3fatal-python-error-py-initialize-cant-initialize-sys-standard-streams/">解决Fatal Python error: Py_Initialize: can't initialize sys standard streams</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/04/01/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa-e5-89-8d-e7-ab-af-e7-94-b5-e8-b7-af/">逻辑分析仪前端电路</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/14/e8-8f-8a-e8-8a-b1-e5-85-ac-e5-8f-b8-e9-9d-a2-e8-af-95-e8-ae-b0-e5-bd-95/">菊花公司面试记录</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/02/24/fpga-e4-b8-8e-cpu-e6-95-b0-e6-8d-ae-e4-ba-a4-e4-ba-92-e7-9a-84-e6-bc-ab-e7-94-bb-e5-b9-bf-e5-91-8a/">FPGA 与 CPU 数据交互的漫画广告</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/02/23/altium-designer-adc-e5-a4-9a-e9-80-9a-e9-81-93-e8-ae-be-e8-ae-a1/">Altium designer  ADC多通道设计</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/02/22/altium-designer-e5-b0-86pcb-e4-b8-9d-e5-8d-b0-e6-a0-87-e5-8f-b7-e5-8f-8d-e6-a0-87-e8-87-b3-e5-8e-9f-e7-90-86-e5-9b-be/">Altium Designer 将PCB丝印标号反标至原理图</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/25/pid-e5-88-9d-e5-ad-a6-e8-80-85-e6-8c-87-e5-8d-97/">PID初学者指南</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/18/e8-bf-90-e6-94-be-e5-a4-8d-e4-b9-a0-e7-ac-94-e8-ae-b0/">运放复习笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/12/qmodbus-e5-9c-a8visual-studio-e4-b8-ad-e7-9a-84-e7-bc-96-e8-af-91-e3-80-82/">qmodbus在visual studio中的编译。</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/10/e8-b6-85-e9-ab-98-e9-80-9f-e9-ab-98-e7-b2-be-e5-ba-a6-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aa-e7-ac-ac-e4-b8-89-e7-89-88/">超高速高精度红外测径仪第三版</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/08/e5-a6-82-e4-bd-95-e8-af-bb-e6-87-82git-e7-9a-84diff-e4-bf-a1-e6-81-af/">如何读懂GIT的DIFF信息</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/06/freemodbus-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-e8-af-a6-e8-a7-a3/">freemodbus源码分析详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/05/freemodbus-rtuascii-e5-ae-98-e6-96-b9-e7-a7-bb-e6-a4-8d-e6-96-87-e6-a1-a3/">freemodbus RTU/ASCII 官方移植文档</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/02/chipscope-e8-bf-9e-e6-8e-a5platform-cable-usb-jtag-e5-a4-b1-e8-b4-a5-e5-8e-9f-e5-9b-a0-e5-8f-8a-e8-a7-a3-e5-86-b3-e5-8a-9e-e6-b3-95/">chipscope 连接platform cable usb JTAG失败原因及解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/24/altium-designer-e8-87-aa-e5-8a-a8-e6-b7-bb-e5-8a-a0-e6-88-90-e7-89-87-e7-9a-84-e6-8b-bc-e6-8e-a5-e5-ad-94-ef-bc-88-e7-bc-9d-e5-90-88-e5-ad-94-ef-bc-89/">altium-designer自动添加成片的拼接孔（缝合孔）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/22/e9-ab-98-e9-80-9f-e9-ab-98-e7-b2-be-e5-ba-a6-e6-b5-8b-e5-be-84-e4-bb-aa-e4-b8-bb-e6-9d-bf-e7-ac-ac-e4-ba-8c-e7-89-88-e5-ae-8c-e5-b7-a5/">高速高精度测径仪主板第二版完工</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/22/altium-designer-e8-87-aa-e5-8a-a8-e6-b7-bb-e5-8a-a0-e5-b1-8f-e8-94-bd-e5-ad-94-ef-bc-88-e5-8c-85-e5-9c-b0-e5-ad-94-ef-bc-89/">altium-designer-自动添加屏蔽孔（包地孔）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/07/fpga-e6-9e-b6-e6-9e-84-e7-a4-ba-e4-be-8b-ef-bc-9aaes-e5-8a-a0-e5-af-86/">FPGA架构示例：AES加密</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/13/lantern-tor-browser-e9-9a-90-e8-b8-aa-e6-9c-80-e4-bd-b3-e6-8b-8d-e6-a1-a3/">Lantern && Tor Browser 隐踪最佳拍档</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/10/26/e7-94-a8-e4-ba-8e-e9-80-9a-e8-ae-af-e6-95-b0-e6-8d-ae-e7-bc-93-e5-ad-98-e7-9a-84-e9-ab-98-e6-95-88-e8-bd-af-e4-bb-b6fifo-e5-ae-9e-e7-8e-b0/">用于通讯数据缓存的高效软件FIFO实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/10/24/e9-ab-98-e9-80-9f-e9-ab-98-e7-b2-be-e5-ba-a6-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aa/">高速高精度红外测径仪</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/10/05/fpga-e6-9e-b6-e6-9e-84-e7-9a-84-e5-8a-9f-e8-80-97-e4-bc-98-e5-8c-96-ef-bc-883-ef-bc-89/">FPGA架构的功耗优化（3）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/10/04/fpga-e6-9e-b6-e6-9e-84-e7-9a-84-e5-8a-9f-e8-80-97-e4-bc-98-e5-8c-96-ef-bc-882-ef-bc-89/">FPGA架构的功耗优化（2）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/30/fpga-e6-9e-b6-e6-9e-84-e7-9a-84-e5-8a-9f-e8-80-97-e4-bc-98-e5-8c-96-ef-bc-881-ef-bc-89/">FPGA架构的功耗优化（1）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/25/e5-a6-82-e4-bd-95-e8-a7-a3-e5-86-b3gcc-e6-88-96mdk-e6-88-96iar-e5-bc-80-e5-90-af-o3-ef-bc-88-e6-9c-80-e9-ab-98-e7-ba-a7-e5-88-ab-ef-bc-89-e4-bc-98-e5-8c-96-e5-90-8e-e7-a8-8b-e5-ba-8f-e4-b8-8d/">如何解决GCC或MDK或IAR开启-O3（最高级别）优化后程序不能正常运行的问题?</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/19/e7-ba-bf-e9-98-b5ccd-e4-b8-93-e7-94-a8ad9945-e9-85-8d-e7-bd-ae-e7-a8-8b-e5-ba-8f-e6-ba-90-e7-a0-81-ef-bc-88-e5-b7-b2-e9-aa-8c-e8-af-81-e9-80-9a-e8-bf-87-ef-bc-89/">线阵CCD专用AD9945 配置程序源码（已验证通过）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/15/e5-b0-86newlib-e7-9a-84printf-e9-87-8d-e5-ae-9a-e5-90-91-e5-88-b0tft-lcd-e6-98-be-e7-a4-ba/">将newlib的printf重定向到TFT LCD显示</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/10/e6-9d-a5-e7-82-b9-e5-86-b7-e7-9a-84-e7-94-b5-e5-ad-90-e7-9f-a5-e8-af-86/">来点冷的电子知识</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/10/e6-95-99-e5-b8-88-e8-8a-82-e5-bf-ab-e4-b9-90-ef-bc-81/">教师节快乐！</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/09/mcu-e9-80-9a-e7-94-a8-e6-8c-89-e9-94-ae-ef-bc-88-e5-90-ab-e8-a7-a6-e6-91-b8-ef-bc-89-e5-a4-84-e7-90-86-e6-a8-a1-e5-9d-97-ef-bc-8c-e6-94-af-e6-8c-81-e5-a7-94-e6-89-98/">mcu通用按键（含触摸）处理模块，支持委托</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/07/e7-ba-bf-e9-98-b5ccd-e6-95-b0-e6-8d-ae-e9-87-87-e9-9b-86adcad9945-e5-88-9d-e5-a7-8b-e9-85-8d-e7-bd-ae-e5-8c-96-e6-ba-90-e7-a0-81/">线阵CCD数据采集ADC(AD9945)初始配置化源码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/06/e6-80-8e-e4-b9-88-e8-a7-a3-e5-86-b3mdk-e6-af-8f-e6-ac-a1-e9-83-bd-e5-85-a8-e7-bc-96-e8-af-91-e7-9a-84-e5-8a-9e-e6-b3-95/">怎么解决MDK 每次都全编译的办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/02/stm32-jtag-e5-8f-a3-e5-a6-82-e4-bd-95-e5-a4-8d-e7-94-a8-ef-bc-9f/">STM32 JTAG 口如何复用？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/31/modelsim-e7-bc-96-e8-af-91-microsemiactel-fpga-e4-bb-bf-e7-9c-9f-e5-ba-93/">modelsim 编译 microsemi(actel) FPGA 仿真库</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/30/cpldfpga-e5-81-9a-e7-9a-84tft-e6-8e-a7-e5-88-b6-e5-99-a8verilog-e5-bc-80-e6-ba-90-e4-bb-a3-e7-a0-81/">CPLD/FPGA做的TFT控制器verilog开源代码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/29/e9-ab-98-e9-80-9f-e7-ba-bf-e9-98-b5ccd-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aa-e9-80-9a-e4-bf-a1-e8-b0-83-e8-af-95-e9-80-9a-e8-bf-87/">高速线阵CCD红外测径仪通信调试通过</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/29/libero-soc-e7-9a-84failed-to-execute-synplify-pro-exe-e9-94-99-e8-af-af-e6-80-8e-e4-b9-88-e8-a7-a3-e5-86-b3-ef-bc-9f/">libero soc的Failed to execute: 'synplify_pro.exe'错误怎么解决？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/28/e8-a7-a3-e5-86-b3-keil-mdk-error-l6235e-more-than-one-section-matches-selector/">解决 keil MDK error: L6235E: More than one section matches selector - cannot all be FIRST/LAST.</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/26/libero-soc-e6-97-a0-e6-b3-95-e5-90-af-e5-8a-a8-e6-80-8e-e6-a0-b7-e8-a7-a3-e5-86-b3-ef-bc-9f/">libero soc无法启动怎样解决？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/25/stm32-swdiojtag-e8-b0-83-e8-af-95-e5-8f-a3-e8-a2-ab-e7-a6-81-e7-94-a8-e5-90-8e-e6-80-8e-e4-b9-88-e8-a7-a3-e9-99-a4-ef-bc-9f/">STM32 SWDIO/JTAG 调试口被禁用后怎么解除？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/24/e5-90-84-e5-8e-82-e5-ae-b6-fpga-e3-80-81cpld-e5-86-85-e9-83-a8-e7-bb-93-e6-9e-84-e5-88-86-e6-9e-90-e5-8f-8a-e7-bc-96-e7-a0-81-e6-b3-a8-e6-84-8f-e4-ba-8b-e9-a1-b9/">各厂家 FPGA、CPLD内部结构分析及编码注意事项</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/23/fpga-e4-b8-ad-e8-b5-84-e6-ba-90-e5-8d-a0-e7-94-a8-e7-8e-87-e4-b8-8a-e9-99-90-e8-ae-be-e4-b8-ba-e5-a4-9a-e5-b0-91-e5-90-88-e9-80-82-ef-bc-9f/">FPGA中资源占用率上限设为多少合适？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/22/e5-8f-af-e7-94-a8-e4-ba-8e-e5-8d-95-e7-89-87-e6-9c-ba-e7-9a-84-e5-b5-8c-e5-85-a5-e5-bc-8f-e9-9d-9e-e9-80-92-e5-bd-92-e5-bf-ab-e9-80-9f-e6-8e-92-e5-ba-8f-e7-ae-97-e6-b3-95-e6-ba-90-e7-a0-81/">可用于单片机的嵌入式非递归快速排序算法源码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/21/e7-94-b5-e9-98-bb-e8-a7-a6-e6-91-b8-e5-b1-8f-e4-ba-94-e7-82-b9-e6-a0-a1-e5-87-86-e7-ae-97-e6-b3-95-e6-ba-90-e7-a0-81/">电阻触摸屏五点校准算法源码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/20/sep4020-nandflash-e5-90-af-e5-8a-a8-e8-af-a6-e8-a7-a3-ef-bc-8c-e4-b8-8d-e5-90-8c-e9-98-b6-e6-ae-b5-e5-ad-98-e5-82-a8-e5-99-a8-e6-98-a0-e5-b0-84-e7-a4-ba-e6-84-8f-e5-9b-be/">SEP4020 NandFlash启动详解，不同阶段存储器映射示意图</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/18/fpga-e8-a7-a3-e7-a0-81mipi-csi-ef-bc-88-e4-b8-80-ef-bc-89-d-phy-e7-90-86-e8-a7-a3/">FPGA解码MIPI CSI（一）——D-PHY理解</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/17/e5-ae-8c-e5-85-a8-e4-bf-ae-e5-a4-8dwin7-e5-bc-95-e5-af-bc/">完全修复WIN7引导</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/17/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-9d-a2-e7-a7-af-e4-bc-98-e5-8c-96/">FPGA、CPLD 架构的面积优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/16/warning-169177-1-pins-must-meet-altera-requirements-for-3-3-3-0-and-2-5-v-interfaces-for-more-information-refer-to-an-447-interfacing-cyclone-iv-e-devices-with-3-33-02-5-v-lvttllvcmos-io/">Warning (169177): 1 pins must meet Altera requirements for 3.3-, 3.0-, and 2.5-V interfaces. For more information, refer to AN 447: Interfacing Cyclone IV E Devices with 3.3\/3.0\/2.5-V LVTTL\/LVCMOS I\/O Systems.</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/16/win7-e5-85-b1-e4-ba-ab-e5-af-86-e7-a0-81-e9-94-99-e8-af-af-e8-a7-a3-e5-86-b3-e5-8a-9e-e6-b3-95/">WIN7 共享 密码错误解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/15/e5-b8-a6-e9-a9-b1-e5-8a-a8-e6-8e-a7-e5-88-b6-e5-99-a8ic-e7-9a-84tft-e6-98-be-e7-a4-ba-e5-b1-8f-e4-bd-bf-e7-94-a8-e8-af-b4-e6-98-8e/">带驱动控制器IC的TFT显示屏使用说明</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/15/e9-ab-98-e9-80-9f-e7-ba-bf-e9-98-b5ccd-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aapcb-e6-9d-bf-e5-9b-9e-e6-9d-a5-e5-95-a6-ef-bc-81/">高速线阵CCD红外测径仪PCB板回来啦！</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/14/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aausb-e4-bc-a0-e8-be-93-e5-ae-8c-e6-88-90/">逻辑分析仪USB传输完成</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/14/e5-87-a0-e7-a7-8d-e7-94-b5-e6-9c-ba-e6-8e-a7-e5-88-b6-e6-96-b9-e5-bc-8f-e7-9a-84-e5-bc-82-e5-90-8c/">几种电机控制方式的异同</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/13/tp-e7-8e-bb-e7-92-83-e8-a7-a6-e6-8e-a7-e6-8a-80-e6-9c-af-e5-8f-8a-e5-bc-80-e5-8f-91-e6-a1-88-e4-be-8b-e5-88-86-e4-ba-ab/">TP玻璃触控技术及开发案例分享</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/12/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa-e4-b8-8a-e4-b8-8b-e4-bd-8d-e6-9c-ba-e9-80-9a-e8-ae-af-e8-b0-83-e8-af-95-e6-88-90-e5-8a-9f/">逻辑分析仪上下位机通讯调试成功</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/11/e8-a7-a3-e5-86-b3-top-overlay-silk-primitive-on-board-region-without-silkscreen/">解决 Top Overlay Silk primitive on board region without silkscreen</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/10/e9-ab-98-e9-80-9f-e7-ba-bf-e9-98-b5ccd-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aapcb-e6-9c-80-e7-bb-88-e7-89-88/">高速线阵CCD红外测径仪PCB最终版</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/10/e4-b8-80-e7-a7-8d-e6-94-b9-e8-bf-9b-e5-9e-8b-e7-9a-84-e8-b6-85-e4-bd-8e-e6-88-90-e6-9c-ac-e5-92-8c-e5-bc-a6-e9-9f-b3-e8-9c-82-e9-b8-a3-e5-99-a8-e4-ba-a7-e7-94-9f-e7-94-b5-e8-b7-af/">一种改进型的超低成本和弦音蜂鸣器产生电路</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/09/e4-b8-80-e7-a7-8d-e4-bd-8e-e6-88-90-e6-9c-ac-e9-9f-b3-e6-95-88-e4-b8-b0-e5-af-8c-e7-9a-84-e5-92-8c-e5-bc-a6-e9-9f-b3-e8-9c-82-e9-b8-a3-e5-99-a8-e4-ba-a7-e7-94-9f-e7-94-b5-e8-b7-af-e5-8f-8a-e5-85-b6/">一种低成本音效丰富的和弦音蜂鸣器产生电路及其驱动代码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/07/e3-80-8a-e7-96-af-e7-8b-82-e7-9a-84-e6-8a-95-e8-b5-84-e8-b7-a8-e8-b6-8a-e5-a4-a7-e8-a5-bf-e6-b4-8b-e7-94-b5-e7-bc-86-e7-9a-84-e5-95-86-e4-b8-9a-e4-bc-a0-e5-a5-87-e3-80-8b-e8-af-bb/">《疯狂的投资——跨越大西洋电缆的商业传奇》读书笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/07/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-80-9f-e5-ba-a6-e4-bc-98-e5-8c-96/">FPGA、CPLD架构的速度优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/05/e9-ab-98-e9-80-9f-e7-ba-a2-e5-a4-96-e7-ba-bf-e9-98-b5ccd-e6-b5-8b-e5-be-84-e4-bb-aapcb-e5-ae-8c-e5-b7-a5/">高速红外线阵CCD测径仪PCB完工</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/05/e6-99-ba-e8-83-bd-e9-a9-ac-e6-a1-b6-e9-a1-b9-e7-9b-ae-e6-80-bb-e7-bb-93/">智能马桶项目总结</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/04/fpga-e6-93-8d-e4-bd-9c-e5-9b-9b-e7-ba-bf-e5-88-b6spi-flash-ef-bc-88quad-spi-flash-ef-bc-89-ef-bc-883-ef-bc-89/">FPGA操作四线制SPI FLASH（Quad SPI Flash） （3）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/02/e5-9f-ba-e4-ba-8efpgacpld-e7-9a-84tft-e6-98-be-e7-a4-ba-e6-8e-a7-e5-88-b6-e5-99-a8-e9-80-bb-e8-be-91-e4-bb-a3-e7-a0-81-e7-9a-84-e8-af-a6-e7-bb-86-e8-ae-be-e8-ae-a1-e8-af-b4-e6-98-8e-e4-b9-a6/">基于FPGA/CPLD + SDRAM 的TFT液晶控制器(lcd controller)逻辑代码的详细设计说明书</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/01/iap-ewarm-stl-e5-a0-86-e7-a9-ba-e9-97-b4-e4-b8-8d-e5-a4-9f-e8-a7-a3-e5-86-b3-e5-8a-9e-e6-b3-95/">IAP EWARM STL 堆栈空间不够解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/30/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa-e3-80-81quad-spi-flash-e8-bd-ac-e6-9d-bf-e5-87-ba-e7-82-89/">逻辑分析仪、QUAD SPI FLASH转板出炉</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/29/altium-designer-e5-9c-a8-e5-90-8c-e4-b8-80-e4-b8-aa-e5-b7-a5-e7-a8-8b-e4-b8-ad-e7-bb-98-e5-88-b6-e5-a4-9a-e5-9d-97pcb/">altium designer在同一个工程中绘制多块PCB</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/28/alitum-designer-e7-bb-99-e4-b8-80-e4-b8-aa-e5-85-83-e4-bb-b6-e6-b7-bb-e5-8a-a0-e5-a4-9a-e4-b8-aapart/">alitum designer给一个元件添加多个part</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/27/fpga-e6-93-8d-e4-bd-9c-e5-9b-9b-e7-ba-bf-e5-88-b6spi-flash-ef-bc-88quad-spi-flash-ef-bc-89-ef-bc-882-ef-bc-89/">FPGA操作四线制SPI FLASH（Quad SPI Flash） （2）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/26/fpga-e6-93-8d-e4-bd-9c-e5-9b-9b-e7-ba-bf-e5-88-b6spi-flash-ef-bc-88quad-spi-flash-ef-bc-89-ef-bc-881-ef-bc-89/">FPGA操作四线制SPI FLASH（Quad SPI Flash） （1）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/23/keil-mdk-e5-92-8c-iar-ewarm-ide-e4-b8-adstl-e5-ae-9e-e7-8e-b0-e7-9a-84-e6-af-94-e8-be-83/">KEIL MDK 和 IAR EWARM IDE中STL实现的比较</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/22/altclkctrl-e4-bd-bf-e7-94-a8-e6-b3-a8-e6-84-8f-e4-ba-8b-e9-a1-b9/">ALTCLKCTRL使用注意事项</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/21/e6-98-8e-e6-99-ba-e5-9c-b0-e5-a4-84-e7-90-86-e5-a4-8d-e4-bd-8d-ef-bc-9a-e8-80-83-e8-99-91-e5-b1-80-e9-83-a8-ef-bc-8c-e8-80-8c-e4-b8-8d-e6-98-af-e5-85-a8-e5-b1-80/">在FPGA中明智地处理复位：考虑局部，而不是全局</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/20/e9-ab-98-e9-80-9f-e7-ba-bf-e9-98-b5ccd-e5-a4-96-e5-be-84-e6-b5-8b-e9-87-8f-e4-bb-aa-e5-8e-9f-e7-90-86-e5-9b-be-e5-ae-8c-e5-b7-a5/">高速线阵CCD外径测量仪原理图完工</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/20/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa68013-to-fpga-e3-80-81quad-spi-flash-e8-bd-ac-e6-9d-bfpcb-e5-ae-8c-e5-b7-a5/">逻辑分析仪68013 to FPGA、QUAD SPI FLASH 转板PCB完工</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/20/sdram-cpld-tft-e9-a9-b1-e5-8a-a8-e5-99-a8-e7-9a-84pcb-e5-b8-83-e5-b1-80-e5-a4-b1-e8-af-af-e4-b8-8e-e7-bb-8f-e9-aa-8c/">SDRAM + CPLD TFT驱动器的PCB布局失误与经验</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/19/e9-87-8d-e6-b8-b8-e6-a1-82-e6-9e-97/">重游桂林</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/17/stm32-jtag-e8-a2-ab-e9-94-81-e4-bd-8f-ef-bc-8c-e8-a7-a3-e9-94-81-e5-8a-9e-e6-b3-95/">STM32 JTAG被锁住，解锁办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/16/wordpress-e6-a8-a1-e6-9d-bf-e4-bf-ae-e6-94-b9-e6-b3-a8-e6-84-8f-e4-ba-8b-e9-a1-b9/">wordpress 模板修改注意事项</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/15/e3-80-8a-e9-bb-91-e5-ae-a2-e4-b8-8e-e7-94-bb-e5-ae-b6-e3-80-8b-e8-af-bb-e4-b9-a6-e7-ac-94-e8-ae-b0/">《黑客与画家》读书笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/15/e6-99-ba-e8-83-bd-e5-ae-b6-e5-b1-85-e8-87-aa-e5-8a-a8-e8-b4-9f-e8-bd-bd-e6-b5-8b-e8-af-95-e3-80-81-e6-b8-a9-e5-9c-ba-e8-b0-83-e8-af-95-e9-80-9a-e7-94-a8-e5-b7-a5-e5-85-b72/">智能家居自动负载测试、温场调试通用工具(2)</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/15/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa68013-to-fpga-e3-80-81quad-spi-flash-e8-bd-ac-e6-9d-bf/">逻辑分析仪68013 to FPGA、QUAD SPI FLASH 转板</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/14/e6-99-ba-e8-83-bd-e5-ae-b6-e5-b1-85-e8-87-aa-e5-8a-a8-e8-b4-9f-e8-bd-bd-e6-b5-8b-e8-af-95-e3-80-81-e6-b8-a9-e5-9c-ba-e8-b0-83-e8-af-95-e9-80-9a-e7-94-a8-e5-b7-a5-e5-85-b7-ef-bc-881-ef-bc-89/">智能家居自动负载测试、温场调试通用工具（1）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/02/e5-9c-a8altium-designer-e4-b8-ad-e5-bf-ab-e9-80-9f-e4-bd-9c-e5-88-b6-e5-8e-9f-e7-90-86-e5-9b-be-e5-b0-81-e8-a3-85/">在Altium Designer中快速作制原理图封装</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/02/quartus-e5-92-8c-modelsim-e4-b8-ad-e7-9a-84-e6-b3-a8-e6-84-8f-e4-ba-8b-e9-a1-b9/">quartus 和 modelsim中的注意事项</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/01/e6-97-b6-e5-ba-8f-e4-bc-98-e5-8c-96-e4-b9-8b-e7-89-a9-e7-90-86-e7-bb-bc-e5-90-88-e4-bc-98-e5-8c-96/">时序优化之物理综合优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/30/e5-85-b3-e4-ba-8e-e6-b5-81-e6-b0-b4-e7-ba-bf-e5-bb-b6-e6-97-b6-e5-85-ac-e5-bc-8f-e7-9a-84-e4-b8-aa-e4-ba-ba-e7-90-86-e8-a7-a3/">关于流水线延时公式的个人理解</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/29/e7-bd-91-e7-ab-99-e6-95-b0-e6-8d-ae-e6-89-93-e5-8c-85-e3-80-81-e5-8e-8b-e7-bc-a9-e5-a4-87-e4-bb-bd/">网站数据打包、压缩备份</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/28/e4-b8-80-e4-b8-aa-e7-ae-80-e5-8d-95-e7-9a-84-e4-bd-8e-e6-88-90-e6-9c-ac5v3-3v-e7-94-b5-e5-b9-b3-e5-8f-8c-e5-90-91-e8-bd-ac-e6-8d-a2-e7-94-b5-e8-b7-af/">一个简单的低成本5V~3.3V电平双向转换电路</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/e6-97-a0-e5-90-8d-e7-9a-84-e4-bb-a3-e7-a0-81/">无名的代码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/e8-87-b4-e7-83-9f-e9-ac-bc-e4-bb-ac/">致烟鬼们</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/wordpress-e9-98-bf-e9-87-8c-e4-ba-91ecs-e4-b8-bb-e6-9c-ba-e5-ae-89-e8-a3-85-e6-ad-a5-e9-aa-a4/">wordpress 阿里云ECS主机安装步骤</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/e8-a7-a3-e5-86-b3mysql-e9-87-8d-e5-90-af-e9-94-99-e8-af-af-e6-8f-90-e7-a4-ba-the-server-quit-without-updating-pid-file/">解决MYSQL重启错误提示 The server quit without updating PID file(…)</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/e6-97-b6-e9-92-9f-e6-8a-96-e5-8a-a8-ef-bc-88clock-jitter-ef-bc-89-e5-92-8c-e6-97-b6-e9-92-9f-e5-81-8f-e7-a7-bb-ef-bc-88clock-skew-ef-bc-89-e7-9a-84-e5-ae-9a-e4-b9-89-ef-bc-8c-e5-8f-8a-e5-85-b6/">时钟抖动（*clock jitter*）和时钟偏移（*clock skew*）的定义，及其对时序的影响</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/24/e5-9c-a8modesim-e4-b8-ad-e4-bb-a5-e5-8f-82-e6-95-b0-e5-90-8d-e6-98-be-e7-a4-ba-e7-8a-b6-e6-80-81-e6-9c-ba-e5-8f-98-e9-87-8f-e7-9a-84-e4-b8-a4-e7-a7-8d-e6-96-b9-e6-b3-95-e5-8f-8a-e6-af-94-e8-be-83/">在modesim中显示状态机变量参数名的两种方法及比较</a></li></ul>
+    <script src="https://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js"></script>
+    <script>
+        $(".post-list").addClass("toc-article");
+        $(".post-list-item a").attr("target","_blank");
+        $("#post-nav-button > a:nth-child(2)").click(function() {
+            $(".fa-bars, .fa-times").toggle();
+            $(".post-list").toggle(300);
+            if ($(".toc").length > 0) {
+                $("#toc, #tocButton").toggle(200, function() {
+                    if ($(".switch-area").is(":visible")) {
+                        $("#tocButton").attr("value", valueHide);
+                        }
+                    })
+            }
+            else {
+            }
+        })
+    </script>
+
+
+
+    <script>
+        
+    </script>
+</div>
+      <footer id="footer">
+    <div class="outer">
+        <div id="footer-info">
+            <div class="footer-left">
+                &copy; 2016 shawge
+            </div>
+            <div class="footer-right">
+                <a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/luuman/hexo-theme-spfk" target="_blank">spfk</a> by luuman
+            </div>
+        </div>
+        
+    </div>
+</footer>
+
+    </div>
+    <script src="https://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js"></script>
+<script src="/js/main.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var backgroundnum = 24;
+            var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
+            $("#mobile-nav").css({"background-image": backgroundimg,"background-size": "cover","background-position": "center"});
+            $(".left-col").css({"background-image": backgroundimg,"background-size": "cover","background-position": "center"});
+        })
+    </script>
+
+
+
+
+
+<div class="scroll" id="scroll">
+    <a href="#"><i class="fa fa-arrow-up"></i></a>
+    <a href="#comments"><i class="fa fa-comments-o"></i></a>
+    <a href="#footer"><i class="fa fa-arrow-down"></i></a>
+</div>
+<script>
+    $(document).ready(function() {
+        if ($("#comments").length < 1) {
+            $("#scroll > a:nth-child(2)").hide();
+        };
+    })
+</script>
+
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+
+  <script language="javascript">
+    $(function() {
+        $("a[title]").each(function() {
+            var a = $(this);
+            var title = a.attr('title');
+            if (title == undefined || title == "") return;
+            a.data('title', title).removeAttr('title').hover(
+
+            function() {
+                var offset = a.offset();
+                $("<div id=\"anchortitlecontainer\"></div>").appendTo($("body")).html(title).css({
+                    top: offset.top - a.outerHeight() - 15,
+                    left: offset.left + a.outerWidth()/2 + 1
+                }).fadeIn(function() {
+                    var pop = $(this);
+                    setTimeout(function() {
+                        pop.remove();
+                    }, pop.text().length * 800);
+                });
+            }, function() {
+                $("#anchortitlecontainer").remove();
+            });
+        });
+    });
+</script>
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>FPGA解码MIPI CSI（一）——D-PHY理解 | hex55</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="译者： shawge原文： 《MIPIAlliance Specification for D-PHY》版本： Version 1.00.00 – 14 May 2009
+本人英文水平很烂，错误之处难免，敬请指正，特在此列出感谢指正名单：
+
+暂无，恭候各位*
+
+
+参考文献
+《MIPIAlliance Specification for D-PHY》
+《MIPI D-PHY Tutorial》
+《">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FPGA解码MIPI CSI（一）——D-PHY理解">
+<meta property="og:url" content="http://hex55.com/2015/08/18/fpga-e8-a7-a3-e7-a0-81mipi-csi-ef-bc-88-e4-b8-80-ef-bc-89-d-phy-e7-90-86-e8-a7-a3/index.html">
+<meta property="og:site_name" content="hex55">
+<meta property="og:description" content="译者： shawge原文： 《MIPIAlliance Specification for D-PHY》版本： Version 1.00.00 – 14 May 2009
+本人英文水平很烂，错误之处难免，敬请指正，特在此列出感谢指正名单：
+
+暂无，恭候各位*
+
+
+参考文献
+《MIPIAlliance Specification for D-PHY》
+《MIPI D-PHY Tutorial》
+《">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy1.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig2.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig3.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig4.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab1.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig5.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig61.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_7.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig81.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig9.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig101.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig11.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig12.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_line_levels.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/laneState.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphySOT.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphyEOT.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphyBurst.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphyBurstSM.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/HS_SM_DS.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/HS_SM_DS2.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab6.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig6.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig7.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab7.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dpy_fig18.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig8.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig19.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig20.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab9_1.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab9_2.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/switchLP.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig10_11.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig22.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab12_1.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab12_2.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig23.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab13.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab14.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab14_2.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig15.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dLaneStateDia.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig25.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig26.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig27.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig28.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig29.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig30.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig31.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_766.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig32.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig33.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig34.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig35.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig36.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig37.png.">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_vod.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_V_CMTX.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_delta_vod.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_delta_cmtx.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_cmtx_0_1.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig38.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig39.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig40.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_delta_zos.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab16.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab17.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig41.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig42.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig43.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig44.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_zolp.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig18_1.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab19.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig45.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig46.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig46.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab20.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab21.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig48.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab22.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab23.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig49.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab24.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig50.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab25.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig51.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig52.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab26.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig53.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_tab27.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig54.png">
+<meta property="og:image" content="http://hex55.com/uploads/2015/08/dphy_fig55.png">
+<meta property="og:updated_time" content="2016-07-30T02:08:13.779Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FPGA解码MIPI CSI（一）——D-PHY理解">
+<meta name="twitter:description" content="译者： shawge原文： 《MIPIAlliance Specification for D-PHY》版本： Version 1.00.00 – 14 May 2009
+本人英文水平很烂，错误之处难免，敬请指正，特在此列出感谢指正名单：
+
+暂无，恭候各位*
+
+
+参考文献
+《MIPIAlliance Specification for D-PHY》
+《MIPI D-PHY Tutorial》
+《">
+<meta name="twitter:image" content="http://hex55.com/uploads/2015/08/dphy1.png">
+  
+    <link rel="alternative" href="/atom.xml" title="hex55" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/img/favicon.png">
+  
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  
+  
+      <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  
+  <!-- 加载特效 -->
+    <script src="/js/pace.js"></script>
+    <link href="/css/pace/pace-theme-flash.css" rel="stylesheet" />
+  <script>
+      var yiliaConfig = {
+          fancybox: true,
+          animate: false,
+          isHome: false,
+          isPost: true,
+          isArchive: false,
+          isTag: false,
+          isCategory: false,
+          open_in_new: false
+      }
+  </script>
+</head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+    <header id="header" class="inner">
+        <a href="/" class="profilepic">
+            
+            <img src="/img/head.jpg" class="js-avatar" style="width: 100%;height: 100%;opacity: 1;">
+            
+        </a>
+
+        <hgroup>
+          <h1 class="header-author"><a href="/">shawge</a></h1>
+        </hgroup>
+
+        
+        <p class="header-subtitle">shawge的电子技术分享</p>
+        
+        
+        
+            <div id="switch-btn" class="switch-btn">
+                <div class="icon">
+                    <div class="icon-ctn">
+                        <div class="icon-wrap icon-house" data-idx="0">
+                            <div class="birdhouse"></div>
+                            <div class="birdhouse_holes"></div>
+                        </div>
+                        <div class="icon-wrap icon-ribbon hide" data-idx="1">
+                            <div class="ribbon"></div>
+                        </div>
+                        
+                        
+                        <div class="icon-wrap icon-me hide" data-idx="3">
+                            <div class="user"></div>
+                            <div class="shoulder"></div>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="tips-box hide">
+                    <div class="tips-arrow"></div>
+                    <ul class="tips-inner">
+                        <li>菜单</li>
+                        <li>标签</li>
+                        
+                        
+                        <li>关于我</li>
+                        
+                    </ul>
+                </div>
+            </div>
+        
+
+        <div id="switch-area" class="switch-area">
+            <div class="switch-wrap">
+                <section class="switch-part switch-part1">
+                    <nav class="header-menu">
+                        <ul>
+                        
+                            <li><a href="/">博客首页</a></li>
+                        
+                            <li><a href="/categories/MCU-ARM/">MCU/ARM</a></li>
+                        
+                            <li><a href="/categories/FPGA/">FPGA</a></li>
+                        
+                            <li><a href="/categories/windows-linux/">WINDOWS/LINUX</a></li>
+                        
+                            <li><a href="/categories/硬件设计/">硬件设计</a></li>
+                        
+                            <li><a href="/archives/">归档</a></li>
+                        
+                        </ul>
+                    </nav>
+                    <nav class="header-nav">
+                        <ul class="social">
+                            
+                                <a class="fl mail" target="_blank" href="http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=27O_o_7um6qq9bi0tg" title="mail">mail</a>
+                            
+                                <a class="fl rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+                            
+                        </ul>
+                    </nav>
+                </section>
+                
+                
+                <section class="switch-part switch-part2">
+                    <div class="widget tagcloud" id="js-tagcloud">
+                        <a href="/tags/github-提速/" style="font-size: 10px;">github 提速</a>
+                    </div>
+                </section>
+                
+                
+                
+
+                
+                
+                <section class="switch-part switch-part3">
+                
+                    <div id="js-aboutme">没想好。。。</div>
+                </section>
+                
+            </div>
+        </div>
+    </header>                
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+      <div class="overlay">
+          <div class="slider-trigger"></div>
+          <h1 class="header-author js-mobile-header hide"><a href="/" title="回到主页">shawge</a></h1>
+      </div>
+    <div class="intrude-less">
+        <header id="header" class="inner">
+            <a href="/" class="profilepic">
+                
+                    <img src="/img/head.jpg" class="js-avatar" style="width: 100%; height: 100%; opacity: 1;">
+                
+            </a>
+            <hgroup>
+              <h1 class="header-author"><a href="/" title="回到主页">shawge</a></h1>
+            </hgroup>
+            
+            <p class="header-subtitle">shawge的电子技术分享</p>
+            
+            <nav class="header-menu">
+                <ul>
+                
+                    <li><a href="/">博客首页</a></li>
+                
+                    <li><a href="/categories/MCU-ARM/">MCU/ARM</a></li>
+                
+                    <li><a href="/categories/FPGA/">FPGA</a></li>
+                
+                    <li><a href="/categories/windows-linux/">WINDOWS/LINUX</a></li>
+                
+                    <li><a href="/categories/硬件设计/">硬件设计</a></li>
+                
+                    <li><a href="/archives/">归档</a></li>
+                
+                <div class="clearfix"></div>
+                </ul>
+            </nav>
+            <nav class="header-nav">
+                <div class="social">
+                    
+                        <a class="mail" target="_blank" href="http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=27O_o_7um6qq9bi0tg" title="mail">mail</a>
+                    
+                        <a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+                    
+                </div>
+            </nav>
+        </header>                
+    </div>
+</nav>
+      <div class="body-wrap"><article id="post-fpga-e8-a7-a3-e7-a0-81mipi-csi-ef-bc-88-e4-b8-80-ef-bc-89-d-phy-e7-90-86-e8-a7-a3" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2015/08/18/fpga-e8-a7-a3-e7-a0-81mipi-csi-ef-bc-88-e4-b8-80-ef-bc-89-d-phy-e7-90-86-e8-a7-a3/" class="article-date">
+      <time datetime="2015-08-18T02:24:20.000Z" itemprop="datePublished">2015-08-18</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      FPGA解码MIPI CSI（一）——D-PHY理解
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/FPGA/">FPGA</a>
+    </div>
+
+
+        
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+          
+        <hr>
+<p>译者： shawge<br>原文： 《MIPIAlliance Specification for D-PHY》<br>版本： Version 1.00.00 – 14 May 2009</p>
+<p><strong>本人英文水平很烂，错误之处难免，敬请指正，特在此列出感谢指正名单：</strong></p>
+<ul>
+<li>暂无，恭候各位<br>*</li>
+</ul>
+<hr>
+<p><strong>参考文献</strong></p>
+<pre><code>《MIPIAlliance Specification for D-PHY》
+《MIPI D-PHY Tutorial》
+《Understanding and Performing MIPI®D-PHY Physical Layer, CSI and DSI Protocol Layer Testing》
+</code></pre><h2 id="1-概览"><a href="#1-概览" class="headerlink" title="1. 概览"></a>1. 概览</h2><h3 id="1-1-展望"><a href="#1-1-展望" class="headerlink" title="1.1 展望"></a>1.1 展望</h3><p>各种MIPI简介中有云，略去不译。</p>
+<h3 id="1-2-意图"><a href="#1-2-意图" class="headerlink" title="1.2 意图"></a>1.2 意图</h3><p>各种MIPI简介中有云，略去不译。</p>
+<h2 id="2-术语"><a href="#2-术语" class="headerlink" title="2. 术语"></a>2. 术语</h2><h3 id="2-1-定义"><a href="#2-1-定义" class="headerlink" title="2.1 定义"></a>2.1 定义</h3><p><strong>Bi-directional</strong>：既可以进行正向通信，也可以进行反向通信。<br><strong>DDR时钟</strong>：双沿触发。<br><strong>D-PHY</strong>：即指本文所说的同步PHY。<br><strong>Escape Mode</strong>：一种数据通道的可选模式，在该模式下可以进行低功耗的低速率命令和数据传输。<br><strong>Forward Direction</strong>：DDR 时钟是一种单向时钟，由时钟发送方往接收方向定义为前向。<br><strong>Lane</strong> ：包括两个通过两根线、点对点连接的的互补的Lane Module。有时候Lane也被用于仅指连接。一个Lane可以既被用于数据也可以被用于时钟的传输。<br><strong>Lane Interconnect</strong>：既支持高速差分也支持低压的单端信号。<br><strong>Lane Module</strong>：每个Lane中用于驱动接收或者发送的模块。<br><strong>Line</strong>：接收器和发送器之间的连线。<br><strong>Link</strong>：至少包含一个时钟Lane和一个数据Lane的连接。<br><strong>Master</strong>：发送高速时钟的一端定义为Master。<br><strong>PHY</strong>：用于实现必要传输特性的连接。一个PHY包含一个时钟模块，至少一个数据模块，还有一个PHY Adapter层。<br><strong>PHY Adapter</strong>：一个完成APPI到PHY PPI转化的协议层。<br><strong>PHY Configuration</strong>：代表一个可能连接的Lane集。一个PHY配置至少包含两个Lane，即一个时钟Lane和数据Lane。<br><strong> Reverse Direction</strong>：与前相相反。<br><strong>Slave</strong>：不发送时钟的一端。<br><strong>Turnaround</strong>：在数据Lane进行通迅时对方向进行一次改变。<br><strong>Unidirectional</strong>：只支持前向的通迅。</p>
+<h3 id="2-2-缩写"><a href="#2-2-缩写" class="headerlink" title="2.2 缩写"></a>2.2 缩写</h3><p>e.g. ——例如……<br>i.e. ——那是……</p>
+<h3 id="2-2-首字母简写"><a href="#2-2-首字母简写" class="headerlink" title="2.2 首字母简写"></a>2.2 首字母简写</h3><p>APPI ——Abstracted PHY-Protocol Interface 物理协义接口的抽象<br>BER—— Bit Error Rate误码率<br>CIL—— Control and Interface Logic控制与接口逻辑<br>DDR—— Double Data Rate双倍速率数据<br>EMI—— Electro Magnetic Interference<br>EoT—— End of Transmission<br>HS—— High-Speed; identifier for operation mode<br>HS-RX—— High-Speed Receiver (Low-Swing Differential)<br>HS-TX—— High-Speed Transmitter (Low-Swing Differential)<br>IO—— Input-Output<br>ISTO—— Industry Standards and Technology Organization行业标准和技术组织<br>LP—— Low-Power: identifier for operation mode<br>LP-CD—— Low-Power Contention Detector<br>LPDT—— Low-Power Data Transmission<br>LP-RX—— Low-Power Receiver (Large-Swing Single-Ended)<br>LP-TX—— Low-Power Transmitter (Large-Swing Single-Ended)<br>LPS—— Low-Power State(s)<br>LSB—— Least Significant Bit<br>Mbps—— Megabits per second<br>MIPI—— Mobile Industry Processor Interface<br>MSB—— Most Significant Bit<br>PHY—— Physical Layer<br>PLL—— Phase-Locked Loop<br>PPI—— PHY-Protocol Interface<br>RF—— Radio Frequency<br>RX—— Receiver<br>SE—— Single-Ended<br>SoT—— Start of Transmission<br>TLIS—— Transmission-Line Interconnect Structure: physical interconnect realization between Master and Slave<br>TX—— Transmitter<br>UI—— Unit Interval, equal to the duration of any HS state on the Clock Lane<br>ULPS—— Ultra-Low Power State</p>
+<h2 id="3-D-PHY简介"><a href="#3-D-PHY简介" class="headerlink" title="3. D-PHY简介"></a>3. D-PHY简介</h2><h3 id="3-1-PHY功能概述"><a href="#3-1-PHY功能概述" class="headerlink" title="3.1 PHY功能概述"></a>3.1 PHY功能概述</h3><p>D-PHY在主机和从机之间提供同步连接。一个典型的PHY配置包括一个时钟信号和至少一个数据信号。时钟信号是单的，从主机发往从机。数据信号既可以是单向的也可以是双向的，这取决于可选项。在半双工传输中，反向带宽是前向带宽的四分之一。Token传递被用于控制连接上的传输方向。<br>一个连接包括一个用于快速数据传输的高速信号模式和一个用于控制的低功耗信号模式。可选项，一个低功耗Escape模式可以用来进行低速的同步数据传输。突发的高速数据传输可以传输任意数量的字节（？？？不是65535么？）。<br>PHY的每个数据Lane占用两根线，另外时钟Lane也要占用两根线。因此对于最小的PHY配置至少需要四根线。每个Lane的高速模式可以在主机和从机两端被终节，由低摆幅的差分信号驱动。在低功耗模式下，所有的线都会被当作单端模式来操作和终止。因为EMI的原因，在这种模式下的驱动将会是速率受控且电流受限的。<br>在高速模式下可实现的最大位传输速率由发送器、接收器和连接共同决定。因此本文中将不会特别提及速率。然而，基本表述倾向于定义速率为每个通道80~1000 Mbps。尽管PHY配置的范围内是不受限的，典型的约束让这个范围在已定的应用中都是适用的。典型实现中这个预期是每个通道500 Mbps.在固定的频率下，可以通过增加数据Lane的数量来提高数据吞吐率。有效的数据吞吐量可以减少采用突发模式通讯。在低功耗模式下的最大速率是10Mbps。</p>
+<h3 id="3-2-必须要实现的功能"><a href="#3-2-必须要实现的功能" class="headerlink" title="3.2 必须要实现的功能"></a>3.2 必须要实现的功能</h3><p>在所有的D-PHY配置中，所有没有出现在这篇文档4.5节中的功能都要被实现。</p>
+<h2 id="4-体系架构"><a href="#4-体系架构" class="headerlink" title="4. 体系架构"></a>4. 体系架构</h2><p>这一节将会描述PHY的内部结构，包括它在行为级上的功能。而且会给出好几种PHY配置。每一个配置都可以被认为是一个基本模块集的合理组合。</p>
+<h3 id="4-1-Lane-模块"><a href="#4-1-Lane-模块" class="headerlink" title="4.1 Lane 模块"></a>4.1 Lane 模块</h3><p>一个PHY配置包含一个时钟Lane模块，至少一个数据Lane模块。每一个PHY Lane模块都是通过两根在两端都匹配的线来连接的。<br><img src="/uploads/2015/08/dphy1.png" alt=""><br>每个Lane模块包含 一个或者多个差分高速功能利用同时连接两端的连线，一个或者多个单端低功耗功能在独立的连接收线上，并用控制&amp;接口逻辑。图1是一个功能总览。高速信号有一个低电压摆幅，例如200mV,同时单端信号有一个更大的摆幅，例如1.2V。高速功能被用于高速数据传输。低功耗功能主要用来做控制，但是也有其它可选用途。I/O功能模块是被Lane控制与接口逻辑块控制。这个接口块带有协议并且决定Lane模块的全局操作。<br>高速功能模块包含一个差分发送器（HS-TX）和一个差分接收器（HS-RX）。<br>一个Lane模块可能包含一个HS-TX，一个HS-RX，或者两都都有。一个HS-TX和一个HS-RX在一个Lane模块里在普通操作中决不会同时使能。使能高速功能模块将终止在Lane连接中属于它这一端的Lane，Lane连接在8.1.1和8 .2.1中定义。如果在Lane模块中的一个高速功能模块没有被使能，那么这个功能模块将会进入高阻态。<br>低功耗模块包含单端发送器（LP-TX），单端接收器（LP-TX），还有低功耗连接检测器（LP-CD）。低功耗 功能模块将总是成对出现，因为单端功能模块在连接线的两端独立操作。<br>高速和低功耗功能模块是关联存在的。也就是说，如果一个Lane模块包含一个HS-TX，它也应该包含一个LP-TX。同样应该同时包含HS-RX和LP-RX。<br>如果一个Lane模块包含一个已上电的LP-RX，这个LP-RX将总是处于激活，并且连线续不断地反映线上电平。一个LP-TX应该只在低功耗状态下被使能。LP-CD功能模块只在双向操作中要求。如果存在，LP-CD功能模块被使能去检测竞争状况当LP-TX被驱动在低功耗态。LP-CD将会检测至少检测一次竞争，在开始在线上驱动进入一个新状态。<br>在一个单独的Lane模块里激活LP-TX，HS-TX和HS-RX将是排它的，除了一些短的交叉点。关于线端的时钟和数据信号以及HS-TX、HS-RX、LP-TX、LP-RX和LP-CD功能模块的详情请参见第8节和第9节。<br>为了操作适当，在Lane连接两端的Lane模块的功能集必须匹配。这意味着在Lane连接一端的每个HS和LP传输或者接收功能，一个互补的HS或者LP接收或者传输功能必须呈现在另一端。额外的，一个连接检测器是被需要的在任何一个Lane模块中，为了组合TX和RX功能。</p>
+<h3 id="4-2-主机和从机"><a href="#4-2-主机和从机" class="headerlink" title="4.2 主机和从机"></a>4.2 主机和从机</h3><p>每个连接都有一个主机端和一个从机端。主机端提供高速DDR时钟信号给时钟Lane，并且也是主数据源。从机接收在时钟Lane上的时钟信号并且是主数据下端。数据连接的主方向是从下端，表示前向方向。数据连在相反的方向被称为反向传输。只有三态数据Lanes能够进行反向传输。在所有的情况下，时钟Lane保持前向，但是三态数据Lane(s)能够被反转，由从机端提供时钟源。</p>
+<h3 id="4-3-高频时钟的产生"><a href="#4-3-高频时钟的产生" class="headerlink" title="4.3 高频时钟的产生"></a>4.3 高频时钟的产生</h3><p>在通常情况下，在主机端为了产生高频时钟一个PLL多路时钟是被需要的。D-PHY规范用一个体系模型——一个独立的多路时钟单元是在PHY之外去产生所要求的高频时钟信号给PHY。尽管这个多路时钟单元典型情况下是整合在PHY内以便于更容易实现。</p>
+<h3 id="4-4-时钟Lane、数据Lane、物理协议接口-PPI"><a href="#4-4-时钟Lane、数据Lane、物理协议接口-PPI" class="headerlink" title="4.4 时钟Lane、数据Lane、物理协议接口(PPI)"></a>4.4 时钟Lane、数据Lane、物理协议接口(PPI)</h3><p>一个完整的链接包含，在Lane模块之外，一个PHY适配层连接所有的Lanes，多路时钟单元，还有PHY协议接口。图2展示了PHY配置的一个连接有两个数据Lanes外加一个独立多路时钟单元的示例。PHY适配层，然而PHY的结构，不在本规范的范围之内。<br>PHY-协议接口（PPI）的逻辑在每个Lane中独立含用，它是一个覆盖Lane功能信的信号集。如图2所示，时钟信号可以被所有的Lanes共享。给多路时钟单元的参考时钟和控制信号不在本规范的范围之内。<br><img src="/uploads/2015/08/dphy_fig2.png" alt=""></p>
+<h3 id="4-5-Lane的可选项"><a href="#4-5-Lane的可选项" class="headerlink" title="4.5 Lane的可选项"></a>4.5 Lane的可选项</h3><p>PHY配置包含一个时钟Lane和一个或者更多的数据Lanes。所有的信号Lanes在前向上都应该支持高速传输和Escape模式。<br>有两类主要的数据Lanes:</p>
+<ul>
+<li>双向（支持反转和部分反向传输功能特性）</li>
+<li>单向（不支持反转或者任何类型的反向传输功能）</li>
+</ul>
+<p>双向数据Lanes将包含一个或者两个以下的反向传输项：</p>
+<ul>
+<li>高速反向数据传输</li>
+<li>低功耗反向Escape模式（包含或者不包含LPDT）</li>
+</ul>
+<p>所有的Lanes都应该包含Escape模式为了ULPS和前向触发。其它的Escape模式功能是可选的；所有可能的Escape特性在5.6节中描述。应用必须定义什么类型的Escape模式功能是被要求的，并且对于单端Lanes，应该选择Escape模式功分别为每个方向。<br>以下是一个完整PHY配置的可选项：</p>
+<ul>
+<li>一个或者多个数据Lanes</li>
+<li>单向或者双向数据Lane(对每个Lane而言)</li>
+<li>支持多种类型的反向传输(对每个Lane而言)</li>
+<li>功能性支持Escape模式（对每个方向上的每个Lane而言）</li>
+<li>数据传输能够用8-bit raw数据（默认）或者用8b9b编码符号（见附录C）</li>
+</ul>
+<p>图3是可选项选择处理流程图。典型配置的例子能在4.7节中被找到。<br><img src="/uploads/2015/08/dphy_fig3.png" alt=""></p>
+<h3 id="4-6-Lane模块的类型"><a href="#4-6-Lane模块的类型" class="headerlink" title="4.6 Lane模块的类型"></a>4.6 Lane模块的类型</h3><p>在Lane模块里面要求的功能取决于Lane连接中指定Lane模块的Lane的类型。主要有三种Lane类型：时钟Lane，双向数据Lane和单向数据Lane。任何PHY配置都能被这些类型的Lane构建。图3展示了选择Lane可选项的更多信息。<br>图4展示了一个通用Lane模块框图附带一个CIL功能的内部功能的全局概览。这个通用模块能够被用于所有的Lane类型。“控制和接口逻辑”（CIL）功能能的要求取决于Lane类型和Lane所在的端。第5节的附录A指示了CIL功能的内容。实际的实现留给实现者。<br><img src="/uploads/2015/08/dphy_fig4.png" alt=""><br>当然，裁剪版的通用Lane模块只支持典型Lane类型的功能。裁剪版由表1的缩写指定。为了简化的原因，四个符中的任何一个字符都可以被Ｘ代替，这意着它是一个可选项。举个例子，CIL-MFEN表示的一个裁剪版的CIL功能，指定了一个只在前向中支持Escape模式功能的并具有双向Lane的主机。CIL-SRXX的裁剪版功能，指定一个从机支持单向高速传输和任何允许的Escape模式子集。<br>注意CIL-XFXN指示一个单向链接，然而要么是一个CIL-XRXXX要么是一个CIL-XXXY块指定在一个单向连接。注意前向“Escape”(ULPS)时钟Lane的入口是不同于数据Lane的入口。<br><img src="/uploads/2015/08/dphy_tab1.png" alt=""><br>备注：<br>1. “Any”是任意的一个或者多个功能的组合。<br>2. 只对数据Lanes有效，意味着“F”或者“R”。</p>
+<p>推荐的PHY协议接口包含数据输入和数据输输以byte格式。输入或者输出时钟信号和控制信号。控制信号包含请求，握手，测试设置，还有输始化。有关逻辑内部接口的建议如附录A。尽管这个不是必需的，但是使用所建议的PPI将是非常有用的。对于外部用法，在IC的一个实现可以在同样的引脚上实现多种信号的转发。然而，为了功耗的原因，PPI通常在IC内。</p>
+<h4 id="4-6-1单向数据Lanes"><a href="#4-6-1单向数据Lanes" class="headerlink" title="4.6.1单向数据Lanes"></a>4.6.1单向数据Lanes</h4><p>对于主机模块双向数据Lane应该包含至少一个HS-TX，一个LP-TX，还有一个CIL-MFXN功能。从机端应该包含至少一个HS-RX，一个LP-RX还有一个CIL-SFXN。</p>
+<h4 id="4-6-2双向数据Lanes"><a href="#4-6-2双向数据Lanes" class="headerlink" title="4.6.2双向数据Lanes"></a>4.6.2双向数据Lanes</h4><p>一个单向数据Lane模块包含部分形式的反向通信；要么高速反向通信，要么反向Escape模式，或者都有。这些功能取决于在Lane模块中的反向通信的方法。</p>
+<h5 id="4-6-2-1没有高速反向通信的单向数据Lane"><a href="#4-6-2-1没有高速反向通信的单向数据Lane" class="headerlink" title="4.6.2.1没有高速反向通信的单向数据Lane"></a>4.6.2.1没有高速反向通信的单向数据Lane</h5><p>一个没有高速反向通信的单向数据Lane应该包含一个反向Escape模式。主机端的Lane模块应该包含一个HS-TX，LP-TX，LP-RX，LP-CD，还有CIL-MFXY。从机端包含一个HS-RX，LP-RX，LP-TX，LP-CD还有一个CIL-SFXY。</p>
+<h5 id="4-6-2-2有高速反向通信的双向数据Lane"><a href="#4-6-2-2有高速反向通信的双向数据Lane" class="headerlink" title="4.6.2.2有高速反向通信的双向数据Lane"></a>4.6.2.2有高速反向通信的双向数据Lane</h5><p>一个有高速反通信的单向数据Lane模块应该包含一个反向Escape模式。主机端Lane模块包含HS-TX，HS-RX，LP-TX，LP-RX，LP-CD，还有CIL-MRXX。从机端应包含一个HS-RX，HS-TX，LP-RX，LP-TX，LP-CD还有一个CIL-SRXX。<br>这种类型的模块看起来更适合主机和从机端，但是因为链接的不对称一端应被配置为主机，另一端作为从机。</p>
+<h4 id="4-6-3时钟Lane"><a href="#4-6-3时钟Lane" class="headerlink" title="4.6.3时钟Lane"></a>4.6.3时钟Lane</h4><p>对于时钟Lane，只有一个线状态集被限制使用。然而对所有的时钟传输和低功耗模式同样的TX和RX功能被要求作为一个双向数据Lanes。主机端的时钟Lane模块因此包含一个HS-TX，LP-TX，还有一个CIL-MCNN功能块，同时从机端模块包含一个HS-RX,一个LP-RX还有一个CIL-SCNN功能。<br>注意时钟Lane的功能要求是类似的，但不完全相同，对一个双向数据Lane。高速DDR时钟被发送以正交相位有数据信号代替内相位。额外的，时钟Lane Escape模式入口不同于在数据Lanes中用的。进一步讲，因为时钟Lane只支持ULPS，一个Escape模式入口码是不要求的。<br>内部时钟信号有适当的相位被产生在PHY外，并且交送给各个独立的Lanes。时钟产生单元的实现不在本规范范围内。内部时钟信号质量应该满足符合在第9节中所规定的信号时序要求。</p>
+<h3 id="4-7-配置"><a href="#4-7-配置" class="headerlink" title="4.7 配置"></a>4.7 配置</h3><p>本节将介绍几种常见的PHY配置，但不应被视为对所有可能安排的一个详尽清单。任何其它不违背本文档要求的配置也都是被允许的。<br>为了创建 一个抽象层，在本节Lane模块用Lane模块符号表示。图5展示了符号的含意及语法。<br><img src="/uploads/2015/08/dphy_fig5.png" alt=""><br>对多数据通道多种配置是可能的。图6展示了一个符号意义的一览表对不同类型的Lane。缩写提及了每个模块功能的每种Lane类型以短语。这也设置了CIL功能要求在每个模块内的。<br><img src="/uploads/2015/08/dphy_fig61.png" alt=""></p>
+<h4 id="4-7-1单向配置"><a href="#4-7-1单向配置" class="headerlink" title="4.7.1单向配置"></a>4.7.1单向配置</h4><p>所有的单向配置都是由一个时钟Lane和一个或者多个单向数据Lane构成。两个基本配置需要区别：单数据Lane和多数据Lanes。一个互补的双重单工配置也被展示了。在PHY层，对于双重单工配置和两个独立的单向配置而言没有区别。</p>
+<h4 id="4-7-1-1单数据Lane的PHY配置"><a href="#4-7-1-1单数据Lane的PHY配置" class="headerlink" title="4.7.1.1单数据Lane的PHY配置"></a>4.7.1.1单数据Lane的PHY配置</h4><p>这个配置从主机到从机包含一个时钟Lane和一个单向数据Lane。因此通信只可能是前向。图7展示了一个没有LPDT的配置。这个配置要求四个信号连接线。<br><img src="/uploads/2015/08/dphy_7.png" alt=""></p>
+<h4 id="4-7-1-2多数据Lane的PHY配置"><a href="#4-7-1-2多数据Lane的PHY配置" class="headerlink" title="4.7.1.2多数据Lane的PHY配置"></a>4.7.1.2多数据Lane的PHY配置</h4><p>这个配置从机到从机包含一个时钟Lane和多个单向数据Lane。带宽得到了扩展，但是通信依然可能是前向。PHY规范不要求所有的数据Lanes同时激活。事实上，协议层独立控制所有的数据Lanes。图8展示了有三个数据Lanes的配置。如果数据Lanes的个数是N，那么配置要求2*（N+1）个互连线。<br><img src="/uploads/2015/08/dphy_fig81.png" alt=""></p>
+<h4 id="4-7-1-3双重单工（两个方向的单向Lanes）"><a href="#4-7-1-3双重单工（两个方向的单向Lanes）" class="headerlink" title="4.7.1.3双重单工（两个方向的单向Lanes）"></a>4.7.1.3双重单工（两个方向的单向Lanes）</h4><p>这种情况如同两个独立（dual）的，单向链接：每个方向一个。每个方向有自己的时钟Lane，并且可能包含一个或者多个数据Lanes。请注意，主机和从机对于两个方向而言是相反的。每个方向上的PHY配置都应遵守D-PHY规范。因为两个方向是独立互补的，每个方向的波特率不要求匹配。然而，对于典型的实现而言，它常常是速率匹配的，并且能够共享一些内部信号，只要链接完全满足扩展规范。图9展示了一个这样的双重PHY配置。<br><img src="/uploads/2015/08/dphy_fig9.png" alt=""></p>
+<h3 id="4-7-2-双向半双工配置"><a href="#4-7-2-双向半双工配置" class="headerlink" title="4.7.2 双向半双工配置"></a>4.7.2 双向半双工配置</h3><p>双向配置包含一个时钟Lane和一个或多个数据Lanes。半双工操作允许双向交叉传输共享互连线。这个配置比双重单工节省连接线。然而在前向和反向交叉传输以及链路反转中连接的时间是共享的。高速比特率在反方向，显然是正向传输比特率的1/4。LPDT在前向和反相有相同的速率。这个配置对于不对称传输的情况非常有用。</p>
+<h4 id="4-7-2-1-单数据Lane的PHY配置"><a href="#4-7-2-1-单数据Lane的PHY配置" class="headerlink" title="4.7.2.1 单数据Lane的PHY配置"></a>4.7.2.1 单数据Lane的PHY配置</h4><p>这个配置包含一个时钟Lane和一个任意类型的双向数据Lane。这允许在正向和反向进行时间复用的数据传输。图10展示有一个同时在两个方向支持高速和Escape（不含LPDT）通信的数据Lane。其它可能如只有一个类型的么向传输或者LPDT也同样被包含在一个或者两个方向中。所有这些配置要求四个互联线。<br><img src="/uploads/2015/08/dphy_fig101.png" alt=""></p>
+<h4 id="4-7-2-2-多数据Lane的PHY配置"><a href="#4-7-2-2-多数据Lane的PHY配置" class="headerlink" title="4.7.2.2 多数据Lane的PHY配置"></a>4.7.2.2 多数据Lane的PHY配置</h4><p>这个配置包含一个时钟Lane和多个双向数据Lanes。在每个独立的Lane上通信既可能是正向也能是反向。所能得到的最大带宽取决于每个方向上Lanes的数量。PHY规范不要求所有的数据Lanes同时激活，甚至不要求在同一个方向进行操作。事实上，协议层独立控制所有的数据Lanes。图11展示了一个有两个数据Lanes的这种配置。如果数据Lanes的数量是N，那么配置要求2*(N+1)个互连线。<br><img src="/uploads/2015/08/dphy_fig11.png" alt=""></p>
+<h3 id="4-7-3-混合数据Lane配置"><a href="#4-7-3-混合数据Lane配置" class="headerlink" title="4.7.3 混合数据Lane配置"></a>4.7.3 混合数据Lane配置</h3><p>取代只用一种类型的数据Lane，PHY配置可以组合多种不同的单向或者双向数据Lane类型。图12展示了有一个双向和一个单向数据Lane但都没有LPDT的配置。<br><img src="/uploads/2015/08/dphy_fig12.png" alt=""></p>
+<h2 id="5-总体操作"><a href="#5-总体操作" class="headerlink" title="5. 总体操作"></a>5. 总体操作</h2><p>本节规范D-PHY的操作，包括信号类型，通信机制，操作模式和编码原理。所要求的电气规范细节在第8节中可以找到。</p>
+<h3 id="5-1-数据传输结构"><a href="#5-1-数据传输结构" class="headerlink" title="5.1 数据传输结构"></a>5.1 数据传输结构</h3><p>在高速或者低功耗传输中，链接传输的载荷数据由协议层提供给链接的另一端。本节规范约束了发送和接收的载荷数据。</p>
+<h4 id="5-1-1-数据单元"><a href="#5-1-1-数据单元" class="headerlink" title="5.1.1 数据单元"></a>5.1.1 数据单元</h4><p>最小的载何数据单元是一字节。在任何Lane上TX提供的被带往RX数据都是字节的整数倍。这个约束同时对任何方向上的高速和低功耗数据传输有效。</p>
+<h4 id="5-1-2-位序、串化，解串"><a href="#5-1-2-位序、串化，解串" class="headerlink" title="5.1.2 位序、串化，解串"></a>5.1.2 位序、串化，解串</h4><p>对串行传输，数据总是由发送PHY串化，由接收PHY解串。PHY没有对出去和进来数据的值和顺序假定特定含义。</p>
+<h4 id="5-1-3-编码、解码"><a href="#5-1-3-编码、解码" class="headerlink" title="5.1.3 编码、解码"></a>5.1.3 编码、解码</h4><p>线性编码在本规范不作要求。然而，如果线性编码被使用了，它必须根据附录C实现。</p>
+<h4 id="5-1-4-数据缓冲"><a href="#5-1-4-数据缓冲" class="headerlink" title="5.1.4 数据缓冲"></a>5.1.4 数据缓冲</h4><p>数据缓冲由协议层提供。一旦通信开始，在发送端的协议层将会提供有效数据直到停止发送请求。对于用了线性编码的Lanes而言，控制符能免够被插入到发送中。接收端的协议层将马上取走由接收PHY交付的数据。这个信令概念，并且因此PHY协议层握手，不允许数据节流。任何用于这种意图的数据缓冲都在协议层实现。</p>
+<h3 id="5-2-Lane状态与传输电平"><a href="#5-2-Lane状态与传输电平" class="headerlink" title="5.2 Lane状态与传输电平"></a>5.2 Lane状态与传输电平</h3><p>传输功能通过电平状态来决定Lane的状态。在普通的操作中，要么是HS发送和LP发送去驱动一个Lane。一个HS发送总是通过差分方式驱动一个Lane。LP发送以一种单端的形式分别驱动每个Lane的两条线。这就导致高速Lane有两种状态，而低速Lane有四种状态。高速Lane的状态么是差分0，要么是差分1。低功耗Lane状态取决于操作模式。对于两种差分高速而言LP接收器总是总是LP-00。<br><img src="/uploads/2015/08/dphy_line_levels.png" alt=""><br>Stop状态起着唯一和中心的功能。如果一个线电来呈现为一个Stop状态并持续到所要求的最小时间，那么PHY状态机将会放弃先前状态返回到Stop态。这种状态可以同时存在于发送和接收模式，完全取决于最近的操作方向。表2列出了在普通操作中一个Lane上能出现的所有状态。细节将会在第8节的电气性能中描述。<br>所有的LP状态周期至少要满足T&#95;LPX。状态改变必须平滑而且没有毛刺影响。时钟信号可以通过Dp和Dn的线或进行重建。理想情况下，重建的时钟至少满足2_T<em>LPX，但是占空比有可能不是50%，这受信号的斜坡和断路电平影响。<br><img src="/uploads/2015/08/laneState.png" alt=""><br>注意：<br>1. *在高速传输期间，LP接收端只能观察到 LP-00</em><br>2. <em>如果LP-11发生在Escape查式下，Lane将会返回到Stop态（控制模式的LP-11）</em></p>
+<h3 id="5-3-操作模式：控制、高速、Escape模式"><a href="#5-3-操作模式：控制、高速、Escape模式" class="headerlink" title="5.3 操作模式：控制、高速、Escape模式"></a>5.3 操作模式：控制、高速、Escape模式</h3><p>在数据Lane进行普通操作时，既会有控制模式也会有高速模式。高速数据传输以突发方式进行，开始和结束都是Stop态（LP-11），这将会在控制模式中定义。一个Lane只有在高速模式中才支持数据突发。进入高速模式的序列是：LP-11, LP-01, LP-00——此时数据Lane的端点将会一直保持在高速态，直到接收到一个LP-11 。Escape模式在控制模式下通过请求进入。数据Lane在检测到一个Stop态后将会退出Escape模式。Stop态为时钟Lane和数据Lane提供了一个待命态，它的周期必须大于T&#95;LPX。可能以Stop发生的事件有高速数据传输请求（LP-11, LP-01, LP-00），Escape模式请求(LP-11, LP-10, LP-00, LP-01, LP-00)或者转向请求（LP-11, LP-10, LP-00, LP-10, LP-00）。</p>
+<h3 id="5-4-高速数据传输"><a href="#5-4-高速数据传输" class="headerlink" title="5.4 高速数据传输"></a>5.4 高速数据传输</h3><p>高速数据传输以突发模式进行。为了让接收器同步，在发送端的突发数据必须要用一个有序的头和尾来扩展，并且接收器在接收端要将其排除。这些头和尾序因此只能在传输线上被观察到。<br>传输的开始和结束都以一个Stop状态开始。在两次突发数据的间隔中Lane必须一直保持在Stop态，直到一个Turnaround或者一个Escape请求出现。在进行高速数据突发时，时钟线必须也在高速模式，以便给从机提供一个DDR时钟。</p>
+<h4 id="5-4-1-突发数据载荷"><a href="#5-4-1-突发数据载荷" class="headerlink" title="5.4.1 突发数据载荷"></a>5.4.1 突发数据载荷</h4><p>突发数据的长度必须总是整数，并且至少有一个byte。请注意，对于短的突发而言，Start和End头将比实际有用数据消耗掉更多的传输时间。没有定义最大长充。然而PHY在高速数据传输时并没有错误自动恢复功能并且BER将不会归零。因此，对每一个独立的协议而言选最合适的最大长度是非常重要的。</p>
+<h4 id="5-4-2-启动传输"><a href="#5-4-2-启动传输" class="headerlink" title="5.4.2 启动传输"></a>5.4.2 启动传输</h4><p>在一个传输请求之后，数据Lane离开Stop态进入高速模式通过一个SOT（ Start-of-Transmission）流程。表3描述了在发送端和接收端的流程。<br><img src="/uploads/2015/08/dphySOT.png" alt=""></p>
+<h4 id="5-4-3-结束传输"><a href="#5-4-3-结束传输" class="headerlink" title="5.4.3 结束传输"></a>5.4.3 结束传输</h4><p>在一个突发数据结时，数据Lane通过一个EoT（ End-of-Transmission）流程离开高速传速模式进入Stop态。表4展示了在EOT步骤中一个可行的事件流程。注意，EoT可以在协议或者D-PHY中使用。<br><img src="/uploads/2015/08/dphyEOT.png" alt=""></p>
+<h4 id="5-4-4-高速数据突发"><a href="#5-4-4-高速数据突发" class="headerlink" title="5.4.4 高速数据突发"></a>5.4.4 高速数据突发</h4><p>图14展示了在突发数据传输中的事件流程。任何一个传输的开始和结束都是在协议中实施。然而，对于绝大多数应用而言，一个Lane可能会同时开束，但不同时结束，这取决于每个Lane要传输的数据量。协议层的握手将会在附录A中描述。<br><img src="/uploads/2015/08/dphyBurst.png" alt=""><br>图15显示了在表5中描述的高速传速的状态机。<br><img src="/uploads/2015/08/dphyBurstSM.png" alt=""><br><img src="/uploads/2015/08/HS_SM_DS.png" alt=""><br><img src="/uploads/2015/08/HS_SM_DS2.png" alt=""></p>
+<h3 id="5-5-双向数据Lane的转向"><a href="#5-5-双向数据Lane的转向" class="headerlink" title="5.5 双向数据Lane的转向"></a>5.5 双向数据Lane的转向</h3><p>双向数据Lane的传递方向是可以翻转的，这意味着一个链路转向流程。这个流程使能了信息以与当前方向相反的方向进行传输。无论是前向传输转向反向传输还是由反向传输转换完前向传输，对于这个流程而言是完全一样的。注意在转向并不改变主从机的地位。链路转向应该完全在控制模式下进行。表6列出来了转向过程中的所有事件顺序。<br><img src="/uploads/2015/08/dphy_tab6.png" alt=""><br><img src="/uploads/2015/08/dphy_fig6.png" alt=""><br>在链路的两边低功耗时钟的时序不必相同。然而低功耗状态周期T&#95;LPX必须确保符回转行为。表14列出出了T&#95;LPX(MASTER)到T&#95;LPX（SLAVE）的速率。<br>如果Lane不再处于TX-LP-Yield，这意味着已进入Stop态，那么回转处理将被中断。驱动Stop态将会中止回转处理并且Lane进入Stop态。PHY应该确保在TX-TA-Rqst、RX-TA-Rqst或者TX-TA-GO之前不会中断。一旦PHY驱动TX-LP-Yield，它将会中断回转流程。协议可以仲裁行为，如果它认为一个错误已发生因为回转流程没有在规定时间内完成。查看6.3.5节获取更多细节。图17呈现了在表7中进行描述的回转状态机。<br><img src="/uploads/2015/08/dphy_fig7.png" alt=""><br><img src="/uploads/2015/08/dphy_tab7.png" alt=""><br>注意：<br>在RX-TA-Look期间，协议层有可能引发PHY进入TX-Stop态。<br>在高速数据传输期间，Stop态（TX-Stop, RX-Stop）有多路有效退出状态。</p>
+<h3 id="5-6-Escape模式"><a href="#5-6-Escape模式" class="headerlink" title="5.6 Escape模式"></a>5.6 Escape模式</h3><p>Escape模式是在低功耗状态下操作数据Lane的一种特速模式。在这种模式下可以进行一些扩展功能。Escape模式在可以只支持正向而不支持反向。如果如果支持Escape模式，不必支持Escape包含所有的特性。<br>一个数据Lane通过一个Escape模式进入流程（LP-11, LP-10, LP-00, LP-01, LP-00）进入Escpae模式。一时最后一个桥接态（LP-00）在线上被观察到那么即将进入Space态（LP-00）。如果一个LP-11在桥接态（LP-00）之前的任何时刻被检测到，那么Escape模式流程将被中止，接收端将会进行等待或者返回Stop态。<br>对数据Lane而言，一旦进入Escpae模式，传输者将会发送一个8-bit的进入命令用以指示请求行为。表8列出来了所有当前可以获得的Escape模式命令和行为。所有未定议的命令都是为将来的扩展保留。<br>Stop态用来退出Escape模式，但是在Escape模式操作其间不被允许，因为操作码是以Spaced-One-Hot(隔离独热码)编码的。停止态会立让Lane返回控制模式。如果输入的命令不被支持，那么这将被忽略，接收端将会等待传输端进入Stop态。<br>在Escape模式下PHY应该用Spaced-One-Hot编码进行同步传输。因此，在这种模式下操作数据Lane与Clock Lane无关。完整的Esacpe模式行为及其触 发命令已在图18中展示。<br><img src="/uploads/2015/08/dpy_fig18.png" alt=""><br>Spaced-One-Hot编码意味着每一个标记态都是隔离交错的。TX发送端应该发送一个Mark-0紧随一个Space去发送’zero-bit’，并且它发送一个Mark-1紧随一个Space去发送’one-bit’。一个标记不能跟随一个没有任何bit的Space。在由Stop态引发退出模式前的最后一相应该是一个Mark-1态，这不是传输bits的一部分，因为它不能紧随一个Space态。时钟能够通过一个执行一个OR操作从两个信号线（Dp和Dn）上恢复出来。每一个独立LP状态的周期长度至少应满足 T&#95;LPX（MIN）。<br><img src="/uploads/2015/08/dphy_fig8.png" alt=""></p>
+<h4 id="5-6-1-远程触发"><a href="#5-6-1-远程触发" class="headerlink" title="5.6.1 远程触发"></a>5.6.1 远程触发</h4><p>触发信号是在接收端给协议层发送一个标记，在发送端给协议层发送一个请求的机制。这既能在前向也能在反向传输上进行，它取决于当前操作的方向以及Escape模式的是否支持该功能。触发信号需要Escape模式支持，并且在发送端和接收端的接口上至少有一个进入触发状态的命令。<br>图18是一个Escaep模式复位触发行为的示例。Lane通过Entry流程进入Escape模式。如果Entry命令模式与复位触发命令相匹配，在接收端协议层通过PPI逻辑将触发标记置位。任何在触发之后但在进入Stop态之前的bit都将会被忽略掉。因此，为了在接收端提供时钟信息清空bytes能够被连锁。<br>注意，包含Reset-Trigger的触发信号是一个信息系统层面的。这个触发命令不影响PHY本身的行为。因此触发信息能够被用于实现任何协议层的企图。</p>
+<h4 id="5-6-2-低功耗传输"><a href="#5-6-2-低功耗传输" class="headerlink" title="5.6.2 低功耗传输"></a>5.6.2 低功耗传输</h4><p>如果Escape查式进入流程是紧随低功耗数据传输（LPDT）进入命令,数据能够在协议层以低速进行通信，当Lane依然处理低功耗状态。<br>线上的数据同样应该以Spaced-One-Hot编码随着Entry命令的使用。数据本身是包含时钟的，通过应用在bit上有编码实现，这个时钟不依靠时钟Lane。通过当使用LPDT在线上维持一个Space状态时，Lane可以暂停。线上一个的Stop态能够停止LPDT,退出Escape态，并且将Lane切换到控制态。在Stop态之前的最后一个相位必须是一个Mark-1态，这不包含任何的数据bit。图19展示了两字节的传输，以及在这两字节之间的一个暂停。<br><img src="/uploads/2015/08/dphy_fig19.png" alt=""><br>使用LPDT，为发送方提供了一个低功耗(Bit)时钟信号（f&#95;MOMENTRAY&lt;20MHz）用于数据传输。数据接收方通过位上的编码实现self-time。因此，一个可变的时钟频率是被允许的。在Lane的LPDT结束时它将会返回Stop态。</p>
+<h4 id="5-6-3-超低功状态"><a href="#5-6-3-超低功状态" class="headerlink" title="5.6.3 超低功状态"></a>5.6.3 超低功状态</h4><p>如果在Esacpe状态命令进入后发送一个超低功耗进入命令，Lane将会进入到超低功耗状态（Ultra-Low Power State——ULPS）。这个命令将会在接收方的协议层置位一个标记。在这个状态期间，线上是Space态（LP-00）。超低功耗状态通过保持Mark-1态一个T&#95;WAKEUP时长来退出，紧随着进入一个Stop态。附录A描述了一退出流程，以及一个控制Mark-1态时长的流程。</p>
+<h4 id="5-6-4-Escape模式状态机"><a href="#5-6-4-Escape模式状态机" class="headerlink" title="5.6.4 Escape模式状态机"></a>5.6.4 Escape模式状态机</h4><p>在图20和表9中展示了一个Escape模式操作的状态机。<br><img src="/uploads/2015/08/dphy_fig20.png" alt=""><br><img src="/uploads/2015/08/dphy_tab9_1.png" alt=""><br><img src="/uploads/2015/08/dphy_tab9_2.png" alt=""><br>注意：在高速数据传输期间，Stop态（TX-Stop, RX-Stop）有多种退出路径。</p>
+<h3 id="5-7-高速时钟传输"><a href="#5-7-高速时钟传输" class="headerlink" title="5.7 高速时钟传输"></a>5.7 高速时钟传输</h3><p>在高速模式下，时钟Lane提供一个由主机发往从机的低摆率差分DDR（half-rate）时钟信号用于数高速数据传输。在正向和第一个数据突发中心的上升沿，时钟信号应该有正交相位反应数据Lane上的位序翻转。Data-Clock关系的细节以及时序规格在第9章中可以查看到。<br>时钟Lane跟单相数据Lane相似。然而它们也有一些时序上的不同点，并且时钟Lane发送高速的DDR时钟而不是数据位。更进一步，低功耗模式的定义对于时钟Lane和数据Lane是不一样的。时钟Lane应该是单向的，并且不包含 任何在Escape模式中规定的功能。只有ULPS被支持，通过采用LP-Rqst状态以一个特定的进入顺序。高速时钟传输的开始和退出以StopState为准。<br>时钟Lane模块是由时钟Lane PPI协议层实现控制的。时钟Lane只有当数据Lane上没有高输传输激活时才应停止。<br>如果时钟Lane处理低功耗模式那么高速数据传输需要一个额外的启动时间。在这种情况下时钟Lane将会在传输请求被处理前首先返回高速操作模式。<br>高速时钟信号应该在一直持续在最近一个数据Lane以HS-0态切换到低功耗态的T&#95;CLK-POST周期中。表10中的这个流程是为了让时钟Lane切换到低功耗模式。注意时钟突个数发送应该总是奇数个，开始和结束都以HS-0态为准。这暗示了在任何相关的数据Lane上时钟给传输提供了一个奇数位的采样。时钟周期应该是准确可靠并遵循HS时序规格。在表11中展示了时钟Lane返回高速时钟传输的流程。图21展示了起始和停止流程。<br><img src="/uploads/2015/08/switchLP.png" alt=""><br><img src="/uploads/2015/08/dphy_fig10_11.png" alt=""><br>图22展示了表12所描述的状态机<br><img src="/uploads/2015/08/dphy_fig22.png" alt=""><br><img src="/uploads/2015/08/dphy_tab12_1.png" alt=""><br><img src="/uploads/2015/08/dphy_tab12_2.png" alt=""><br>注意：在高速数据传输期间，Stop态（TX-Stop, RX-Stop）有多路有效的退出路径。</p>
+<h3 id="5-8-时钟Lane的超低功耗状态"><a href="#5-8-时钟Lane的超低功耗状态" class="headerlink" title="5.8 时钟Lane的超低功耗状态"></a>5.8 时钟Lane的超低功耗状态</h3><p>尽管在Escape模式下不包含时钟Lane，但是在超低功耗下时钟Lane必须被支持。<br>一个时钟Lane应该通过一个时钟超低功耗状态进入命令进入超低功耗态。在这个流程中，以Stop态开始，发送方必须驱动TX-UPLP-Rqst(LP-10)态，然后驱动TX-ULPS态（LP-00）。在这之后，时钟Lane应该进入超低功耗态。如果发生了错误，在TX-ULPS-Rqst态之后紧接着就会检测到LP-01或者LP-11，超低功耗态的进入流程将会被中止，接收端将等待或者进入Stop态作为回应。<br>接收端的PHY将会置位接收端协议层的ULP状态。在这个状态期间，线将保持 在ULP态（LP-00）。超低功耗通过将以Mark-1表示的TX-ULPS-Exit态维持一个T&#95;WAKEUP时长来进入下一个Stop态。附录A描述了Mark-1 TX-ULPS-Exit态一个允许的在退出流程上花费控制时长。<br><img src="/uploads/2015/08/dphy_fig23.png" alt=""><br><img src="/uploads/2015/08/dphy_tab13.png" alt=""><br>注意：在高速数据传输期间，Stop态（TX-Stop, RX-Stop）有多路有效的退出路径。</p>
+<h3 id="5-9-总体的操作时序参数"><a href="#5-9-总体的操作时序参数" class="headerlink" title="5.9 总体的操作时序参数"></a>5.9 总体的操作时序参数</h3><p>表14列出了所有在本节中使用过的时序参数的范围。这些值的前提是假定时钟的容差不超过正负10%。<br>发送端必须支持所有在表14中定义的发送时序参数。<br>接收端必须支持所有在表14中定义的接收时序参数。<br>同时也请注意，虽然没有针对每一个发送端时序参数制定接收端公差，但是接收端应该支持接受所有发送端在表14中被允许的时序参数，包括所有的HS UI值，并且包括支持在接收端数据手册中定义的被支持的最大HS时钟速率。<br><img src="/uploads/2015/08/dphy_tab14.png" alt=""><br><img src="/uploads/2015/08/dphy_tab14_2.png" alt=""><br>备注：<br>1. 最小值依赖于波特率（bit rate）。实现的时候应该确保对所有被支持波特率都进行合适的操作。<br>2. 如果a&gt;b那么max(a,b) = a 或者 max(a,b) = b。<br>3. 在前向HS模式中n=1，在反向HS模式中n=4。<br>4. T&#95;LPX是一个内部的状态机相关时序。外部的测试值有可能与指定值稍由不同，则于有不对称的上升和下降沿。<br>5. 明确的传输参数。<br>6. 明确的接收参数。</p>
+<h3 id="5-10-系统电源状态"><a href="#5-10-系统电源状态" class="headerlink" title="5.10 系统电源状态"></a>5.10 系统电源状态</h3><p>PHY配置中的每一个Lane的电源都必须使能，有三种不同的电源消耗指标：高速传输模式、低功耗传输模式和超低功耗状态。关于超低功耗的细节可以参见5.6.3和5.8。在这些模式中传输都应该PHY把持。</p>
+<h3 id="5-11-初始化"><a href="#5-11-初始化" class="headerlink" title="5.11 初始化"></a>5.11 初始化</h3><p>在上电后，当主机PHY保持一个Stop态（LP-11）周期超过一个指定的T&#95;INIT时，从机PHY应该进行初始化。第一个Stop态比指定的T&#95;INIT更长，为了召唤一次初始化。主机PHY本身也会由系统或者协议层（PPI）输入一个信号进行初始化。主机端应该确保Stop态比T&#95;INIT长,并且在主机完成初始化前不能中断。从机在内部初始化期间应该忽略所有的线上状态。在多Lane配置中，所有的Lane都应同时初始化。<br>注意，T&#95;INIT被认为是一个依赖于协议的参数，因此对于T&#95;INIT&#95;MASTER、T&#95;INIT&#95;SLAVE（发送端和接收端的初始化时保持Stop态的时长）的准确要求是由协议层指定的，并不在本文档的讨论范围内。然而，D-PHY标准指定了一个T&#95;INIT&#95;MASTER、T&#95;INIT&#95;SLAVE最小边界时长不应该小于100us。协议层使用的标准可能比D-PHY标准的限制值大一些，例如，T&#95;INIT&#95;MASTER &gt;= 1ms，同时T&#95;INIT&#95;SLAVE = 500 - 800 us。<br><img src="/uploads/2015/08/dphy_fig15.png" alt=""></p>
+<h3 id="5-12-校准"><a href="#5-12-校准" class="headerlink" title="5.12 校准"></a>5.12 校准</h3><p>在D-PHY标准中没有一个明确的检准。如果实现者要求一个校准，校准可以在线状态处于Stop态的初始化周期内安排。校准过程对于线而言应是不可见的。更多有关校准的细节不在本文档的论述范围内。</p>
+<h3 id="5-13-全局操作流程图"><a href="#5-13-全局操作流程图" class="headerlink" title="5.13 全局操作流程图"></a>5.13 全局操作流程图</h3><p>所有先前描述的操作，包括或者不包括可选部分，都包含在Lane模块内。图24展示了数据Lane模块的操作流程。对于发送方和接收方有四个主要的过程：高速传输、Escape模式、转向、初始化。<br><img src="/uploads/2015/08/dLaneStateDia.png" alt=""><br>图25展示了时钟Lane模块的状态机。时钟状态模块有四个主要操作状态：初始化（没有强制标准），低功耗停止态，超低功耗态，高速时钟传输态。这个图同样也展示了之前描述的传输状态。<br><img src="/uploads/2015/08/dphy_fig25.png" alt=""></p>
+<h3 id="5-14-数据速率的相关参数"><a href="#5-14-数据速率的相关参数" class="headerlink" title="5.14 数据速率的相关参数"></a>5.14 数据速率的相关参数</h3><p>D-PHY上的高速数据传输速率是可配置的，这由具体的实现决定。任何独立的数据传输都以SoT和EoT标识，速率固定。然而允许对D-PHY高速传输进行速率重定义，在开始退出ULP状态之前或者在Stop态中，无论HS时钟是否是在运行。这种数据速率可重定义的方法不在本文内容之列。<br>在这个文档中的许多时序参数标定是以一个固定时间段内的总和和一个回文具体的个数的高速传输UIs为准。这些参数可能需要重新计算，如果数据速率与本文不匹配，并且因此UI值被改变。这些参数所有允许的值都在表14中列出。更明白地讲，参数的名字和意图是相重复的。</p>
+<h4 id="5-14-1-只包含UI值的参数"><a href="#5-14-1-只包含UI值的参数" class="headerlink" title="5.14.1 只包含UI值的参数"></a>5.14.1 只包含UI值的参数</h4><p>T&#95;CLK-PRE是最小的高速时钟周期，主机必须发送时钟Lane，在它重启HS模式，并且在发送任何数据之前。如果一个接收端的具体协议要求T&#95;CLK-PRE更多的时钟周期，主机端的协议必须确保这些是匹配的。</p>
+<h4 id="5-14-2-包含时序和UI值的参数"><a href="#5-14-2-包含时序和UI值的参数" class="headerlink" title="5.14.2 包含时序和UI值的参数"></a>5.14.2 包含时序和UI值的参数</h4><p>有一些参数指标是针对一些UI明确时间的总和。明确的时间值，大体上来讲，是从连接在指定驱动电压和终止值的充电和放电标准值推导出来的。同样的，这个明确的时间值与数据速率无关。可想而知，用一个模拟参数的总和一个HS时钟计数器去确保实现满足这些参数。如果这些明确的时间值仅仅是通过HS时钟周期计数来实现的，这些计数值是与数据速率相关的，因此，必须改变这些值，当数据速率改变时。<br>T&#95;D-TERM-EN——使能在Dn交叉V-IL,MAX时数据Lane接收器线终止测量的时序。<br>T&#95;HS-PREPARE——在数据Lane上进行HS传输的之前驱动LP-00的时序。<br>T&#95;HS-PREPARE + T&#95;HS-ZERO,MIN —— 在开始HS传输的准备时间加上发送HS-0的时间之和，也就是开启线终端并且驱动HS连接，优先发送SoT同步序列。<br>T&#95;HS-trail——发送端在发送最后一个有效载荷数据驱动最后一个数据位翻转的时间。这个时间是用于接收端去确认EoT。<br>TCLK-POST，MIN——是发送端上一个数据Lane结束HS突发传输转换成LP模式之后发送端仍然要继续发送HS时钟的时间。如果一个典型的接收端实现要求超过TCLK-POST,MIN的时钟周期，那么发送方必须给予足够的时钟数以完成匹配。</p>
+<h4 id="5-14-3-只包含时序值的参数"><a href="#5-14-3-只包含时序值的参数" class="headerlink" title="5.14.3 只包含时序值的参数"></a>5.14.3 只包含时序值的参数</h4><p>很多参数标准都是明确的时间值。在5.14.2结中，这些明确的时序值是驱动连接充放电所需的典型时间，因此与数据速率无关。可想而知使用一个模拟定时器或者HS时钟计数器来确保在实现中这些参数得到满足。然而，如果这些参数值只是通过HS时钟实现，那么计数值是与数据速率相关的，因此，必当数据速率改变时必须修改这些值。<br>以下这些参数都是独立的时间值：</p>
+<ul>
+<li>T&#95;HS-SKIP,MIN</li>
+<li>TCLK-MISS,MAX</li>
+<li>TCLK-TRAIL,MIN</li>
+<li>TCLK-TERM-EN</li>
+<li>TCLK-PREPARE</li>
+</ul>
+<h4 id="5-14-4-只包和数据速率无关的含时序参数"><a href="#5-14-4-只包和数据速率无关的含时序参数" class="headerlink" title="5.14.4 只包和数据速率无关的含时序参数"></a>5.14.4 只包和数据速率无关的含时序参数</h4><p>表14中的其余参数即使在高速时钟被关闭时也应遵守。这些参数包低功耗初始化状态保持，还有LP信号反相。尽管这些参数跟HS数据速率无关，但是一些D-PHY实现有可能在数据速率改变的时候需要去判断这些值。</p>
+<h2 id="6-故障检测"><a href="#6-故障检测" class="headerlink" title="6. 故障检测"></a>6. 故障检测</h2><p>这里有三种不同的机制去检测连路故障。总线的连接、错误检测功能是包含在D-PHY中的。这些功能应该能够检测很多种典型的错误。然而，有些错误D-PHY检测不到，需要协议层去解决。因此，第三种检测机制是一些特殊的看门狗定时器。</p>
+<h3 id="6-1-连接检测"><a href="#6-1-连接检测" class="headerlink" title="6.1 连接检测"></a>6.1 连接检测</h3><p>如果一个双向Lane模块和一个非双向Lane模块被组合在同一个Lane上，只有非双向功能是允许的。因为在这种情况下，双向PHY模块的扩展功能在非双向那一端得不到支持，双向模块的双向特性应该被安全的禁能。否则，在有些情况下有可能发生死锁，这样只能通过系统上电和重新初始化来解决。<br>在任何可预期的一个操作周期内普通操作有且仅有一个连接驱动Lane。由于错误或者系统故障Lane有可能终结一个不合规定的状态，例如Lane是由两端驱动，或者两端都不驱动。这最终导致一个状态冲突，这被叫作竞争。<br>所有LP双向Lane模块都应包含竞争检测功能，能检测以下的竞争条件：</p>
+<ul>
+<li>模块的两端在同一条线上驱动相反的LP电平。在这种情况下，线电压将会产生一定的压降，间于VOL,MIN和VOH,MAX中的某些值。因为V&#95;IL比V&#95;IHCD更大,这个压降将总会高于V&#95;IHCD，或低于V&#95;IL或两者都有。参见第8节。这确保至少在连接的一端或者两端都会检测到错误。</li>
+<li>在同一条线上模块的一端驱动LP高，而另一端驱动HS低。在这种情况下，线电压的压降将会是小于V&#95;IL的一个值。这种况争将会在发送LP高的一端检测到。</li>
+</ul>
+<p>第一种情况能通过组合LP-CD和LP-RX功能被检测到。LP-RX功能检测到第二种情况。关于LP-CD和LP-RX的电气规范将会在第8节中详述。当发生信号下降时，竞争检测应该在结束每一个低功耗位周期时被检测到，除了ULPS例外。ULPS的竞争检测是不作要求的，因为没有预定义的位周期，并且时钟可能也不可得。<br>在竞争已经被检测到后，协议层应该提借一个合适的方法去解决。</p>
+<h3 id="6-2-错误检测序列"><a href="#6-2-错误检测序列" class="headerlink" title="6.2 错误检测序列"></a>6.2 错误检测序列</h3><p>如果因为任何原因导致Lane信号被破坏，PHY接收端就会检测到错误序列。在PHY内的错误检测能够通过协议层的PPI实现通信。这种错误检测是一个可选项，但是强列推荐，因为它能够增强可靠性。以下的序列错误能够被区分：</p>
+<ul>
+<li>SoT错误</li>
+<li>SoT同步错误</li>
+<li>EoT同步错误</li>
+<li>Escape进入模式错误</li>
+<li>LP传输同步错误</li>
+<li>控制失败错误</li>
+</ul>
+<h4 id="6-2-1-SoT错误"><a href="#6-2-1-SoT错误" class="headerlink" title="6.2.1 SoT错误"></a>6.2.1 SoT错误</h4><p>用于启动高速传输的头序列能具有单bit或多bit的容错能力。因此同步是用的，但是会降低数据载荷。如果发生了SoT错误这种情况。</p>
+<h4 id="6-2-2-SoT同步错误"><a href="#6-2-2-SoT同步错误" class="headerlink" title="6.2.2 SoT同步错误"></a>6.2.2 SoT同步错误</h4><p>如果SoT头序列被损坏，那么同步就会出现问题，一个SoT同步错误将被检测到。</p>
+<h4 id="6-2-3-EoT同步错误"><a href="#6-2-3-EoT同步错误" class="headerlink" title="6.2.3 EoT同步错误"></a>6.2.3 EoT同步错误</h4><p>EOT同步错误用于指示传输的最后一bit不符合byte的边界。这个错误只能在Eot流程（检测到LP-11）情况下被指示。</p>
+<h4 id="6-2-4-进入Escape模式错误"><a href="#6-2-4-进入Escape模式错误" class="headerlink" title="6.2.4 进入Escape模式错误"></a>6.2.4 进入Escape模式错误</h4><p>如果接收Lane模块不能识别接收到的进入Escape模式的命令，那么进入Escape错误将会被指示。</p>
+<h4 id="6-2-5-低功耗传输同步错误。"><a href="#6-2-5-低功耗传输同步错误。" class="headerlink" title="6.2.5 低功耗传输同步错误。"></a>6.2.5 低功耗传输同步错误。</h4><p>在低功耗传输流程的结尾，如果数据跟Byte边界不同步，那么Escape同步错误信号将被指示。</p>
+<h4 id="6-2-6-控制失效错误"><a href="#6-2-6-控制失效错误" class="headerlink" title="6.2.6 控制失效错误"></a>6.2.6 控制失效错误</h4><p>如果一个LP-Rqst(LP-10)没有紧随通过剩余的有效Escape或者转向序列，一个控制失效错误将会被指示。这个错误同时也用于指示如果一个HS-Rqst(LP-01)是不正确地紧随一个桥接态（LP-00）。</p>
+<h3 id="6-3-协议层看门狗（信息）"><a href="#6-3-协议层看门狗（信息）" class="headerlink" title="6.3 协议层看门狗（信息）"></a>6.3 协议层看门狗（信息）</h3><p>PHY是不可能检测出所有错误的。因此，一个扩展协议层超时机制是有必要的，为了去限制某一种模式或者状态的最大时间。</p>
+<h4 id="6-3-1-高速接收超时"><a href="#6-3-1-高速接收超时" class="headerlink" title="6.3.1 高速接收超时"></a>6.3.1 高速接收超时</h4><p>如果高速接收模式在确定的周期内没有接收到EoT，协议层将会认为超时。超时周期在协议中进行规范。</p>
+<h4 id="6-3-2-高速发送超时"><a href="#6-3-2-高速发送超时" class="headerlink" title="6.3.2 高速发送超时"></a>6.3.2 高速发送超时</h4><p>在高速发送里最大的传输长度是有界定的。超时周期在协议中规范。</p>
+<h4 id="6-3-3-Escape模式超时"><a href="#6-3-3-Escape模式超时" class="headerlink" title="6.3.3 Escape模式超时"></a>6.3.3 Escape模式超时</h4><p>一个设置在Escape模式中有可能超时。超时必须大于其它设备的Escape模式静默限制。超时周期在协议中规范。</p>
+<h4 id="6-3-4-Escape模式静默超时"><a href="#6-3-4-Escape模式静默超时" class="headerlink" title="6.3.4 Escape模式静默超时"></a>6.3.4 Escape模式静默超时</h4><p>一个设备有一个处于Escape模式即LP TX-00的界定时长，在这之后，其它的设备有可能超时。超时周期在协议中规范。举个例，一个显示模块应该有一个Escape模式静默限制，在这之后主机处理器能够认为超时。</p>
+<h4 id="6-3-5-回转错误"><a href="#6-3-5-回转错误" class="headerlink" title="6.3.5 回转错误"></a>6.3.5 回转错误</h4><p>一个回转流程总是以Stop态开始。流程以一个低功耗状态开始，以一个桥接态（LP-00）结束，在驱动端交换期间。流程包括以一个紧随来自另一端的Stop态驱动的转变态。如果一个实际的违返了通常回转流程的序列发生了，一个“控制失效错误”在协议层会被标记。参见6.2.6节。转变态是用于确认一个正整完整的转向流程。如量个未确认在确定的时间周期内被观察到，协议将会超时并且执行适当的操作。这个周期应该大于在典型系统中可能的最大的回转时间。在PHY层没有为这种情况设置的超时机制。</p>
+<h2 id="7-连接与Lane配置"><a href="#7-连接与Lane配置" class="headerlink" title="7. 连接与Lane配置"></a>7. 连接与Lane配置</h2><p>在发送端与接收端的连接中包含D-PHY通信中的所有信号。这既包含高速，低压信号IO技术也包含用于控制的低速、低功耗信号。由于这个原因，物理连实现必须等长、差分、点对点传输线对地参考。总的连接包含以下传输线段，例如，PCB、柔性电路板和连接电缆。<br><img src="/uploads/2015/08/dphy_fig26.png" alt=""></p>
+<h3 id="7-1-Lane配置"><a href="#7-1-Lane配置" class="headerlink" title="7.1 Lane配置"></a>7.1 Lane配置</h3><p>完整的物理连接包含至少在每边至少有一个配对的发送端或者接收端，一些在它们之间的传输线连接结构（TLIS）。所有的Lane执行都是这三种元素的组合。这些元素的分率是通过Module（IC）引脚。本节将描述要求执行的用于信号布线传输线连接结构，同样也有在TX和RX端相对应的I/O-cell。这确保所有Lane操作都是正确的。<br>为了尊守物理层标准，传输线连接结构将会典型的是最大部分。在PCB或柔性电路板的边上，这可能包含一些过孔和连接器。</p>
+<h3 id="7-2-边界条件"><a href="#7-2-边界条件" class="headerlink" title="7.2 边界条件"></a>7.2 边界条件</h3><p>相关阻抗参数是差分100欧，单端50欧，普通模式下两根线都是25欧。50欧的单端组抗操作是为便于测试和鉴定意图。<br>对Lane的三部分TX、TLIS、RX的典型阻抗要求一致的。在整 个操作频率范转内对于RX和TX阻抗参数的容忍度是由S参数定义的。<br>差分通道同样用于LP单端信号。因此强烈推荐应用低耦合差分线。<br>信号在连接上的传速时间不能超过2ns。</p>
+<h3 id="7-3-定义"><a href="#7-3-定义" class="headerlink" title="7.3 定义"></a>7.3 定义</h3><p>‘fh’是用于数据传输的最高的基宽频率，等于1/(2*UI&#95;INST,MIN)。实现应该规范一个UI&#95;INST,MIN值，代表最小的可能的瞬时UI，在一个给定实现的高速数据传输中。<br>‘fh&#95;MAX’是一个设备规范，用于指示一个典型的设备支持的最大的fh。<br>‘fLP,MAX’是低功耗模式下的最大开关时间。<br> RF干涉频率是用’f&#95;INT’表示，那么f&#95;INT,MIN定义RF干涉带宽的下边界。<br>f&#95;MAX频率被定认为 (1/5t&#95;F,MIN, 1/5t&#95;R,MIN)的最大值，t&#95;R和t&#95;F是高速信号的上升沿和下降沿时间。这些参数在第8节中定义义。D-PHY允许的最快的信号频率f&#95;MAX是1.33GHz。</p>
+<h3 id="7-4-S-参数详述"><a href="#7-4-S-参数详述" class="headerlink" title="7.4 S-参数详述"></a>7.4 S-参数详述</h3><p>物理层连接要求执行的规范，是通过TX、TLIS、RX 的S-参数表示的，还混合模式TLIS的4端口数，并且RX、TX混合模式， 反射（回波损耗）——参数。S-参数是所有操作频率范围的限制模板。<br>差分传输性能与此非常相关，因此本文采用混合模式参数。因为性能取决于目标比特率，大多数的S-参数要求是在相对于比特率的一个规范化小频率轴上。只有参数是对抑制额外(RF)干涉是非常重要的，在一个绝对频域内。这个标尺扩展至f&#95;MAX。超载这个电路自有频率的将会足以抑制高频信号干频。<br>TLIS唯一的整体性和最大的RX、TX反射是被指定的。这足以指定RX/TX模块引脚的信号行为。细分损耗，反射和对TLIS的独立物理模转换预算是留给系统设计者的。附录B包含子系统设计规则和布线指导。</p>
+<h3 id="7-5-条件描述"><a href="#7-5-条件描述" class="headerlink" title="7.5 条件描述"></a>7.5 条件描述</h3><p>所有的S-参数定义都是基于50欧阻抗参数电平的。特性能够通过图27的测量系统得出。<br><img src="/uploads/2015/08/dphy_fig27.png" alt=""><br>S-参数的语法是 S&#91;measured-mode&#93;&#91;driver-mode&#93;&#91;measured-port&#93;&#91;driven-port&#93;。例如：TLIS的Sdd21是在2端口的差分信号对应于一个驱动1端口的差分信号；Sdc22是在端口2上的测量差分反射信号相对于一个驱动端口2的普通信号。</p>
+<h3 id="7-6-连接规范"><a href="#7-6-连接规范" class="headerlink" title="7.6 连接规范"></a>7.6 连接规范</h3><p>差分线信号走线（TLSR）是所有频率的混合模式4端口S-参数。这包括差分和普通模式，插入和回波损耗，还有模式转换因素。</p>
+<h4 id="7-6-1-差分描述"><a href="#7-6-1-差分描述" class="headerlink" title="7.6.1 差分描述"></a>7.6.1 差分描述</h4><p>差分传输发送端的TLIS行为（插入损耗）应该符合Sdd21和Sdd12模板，如图28， i ≠ j。<br><img src="/uploads/2015/08/dphy_fig28.png" alt=""><br>TLIS两个端口上的差分反射由Sdd11和sdd22规范,并且符合图29的模板。不符合差分反射系数有可能影响交互操作和操作。<br><img src="/uploads/2015/08/dphy_fig29.png" alt=""></p>
+<h4 id="7-6-2-通用模式特性"><a href="#7-6-2-通用模式特性" class="headerlink" title="7.6.2 通用模式特性"></a>7.6.2 通用模式特性</h4><p>通用模式插入损耗是通过差分插入损耗和内部Lane交插耦合隐含规范的。通用插入损耗的要求因此等价于差分的要求。<br>通用模式反射系数Scc11和Scc22都应低于-20dB,在f&#95;LP,MAX范围的每个频率点，在fh时低于-15dB,并且在f&#95;MAX低于-9dB，同图29的差分要求类似。不符合通用模式反射系数有可能影响交互操作和操作。</p>
+<h4 id="7-6-3-Intra-Lane-Cross-Coupling"><a href="#7-6-3-Intra-Lane-Cross-Coupling" class="headerlink" title="7.6.3 Intra-Lane Cross-Coupling"></a>7.6.3 Intra-Lane Cross-Coupling</h4><p>在高速传输中两条被作为差分对的线同样在低功耗模式下被作为单端信号。因此两长着线的耦合应由单端交叉耦合的限制所约束。两条线间的耦合被定义为差分S-参数的Scc21和Sdd21或者Scc12和Sdd12。无论如何，差别不应超过-20dB,在10*f_LP,MAX的每个频点。</p>
+<h4 id="7-6-4-模式变换的限制"><a href="#7-6-4-模式变换的限制" class="headerlink" title="7.6.4 模式变换的限制"></a>7.6.4 模式变换的限制</h4><p>所有混合模式，4端口S-参数是用于差分到普通模式转换，反之亦然，同样不应超过-26dB，在f&#95;MAX的每个频点。这包括Sdc12, Scd21 , Scd12, Sdc21, Scd11, Sdc11, Scd22, Sdc22。</p>
+<h4 id="7-6-5-Lane内部（指一个Lane的两根差分线之间）的交叉耦合"><a href="#7-6-5-Lane内部（指一个Lane的两根差分线之间）的交叉耦合" class="headerlink" title="7.6.5 Lane内部（指一个Lane的两根差分线之间）的交叉耦合"></a>7.6.5 Lane内部（指一个Lane的两根差分线之间）的交叉耦合</h4><p>普通模式和差分在Lanes（包括时数据Lane和时钟Lane）的内部交叉耦合应该分别符合图30和图31的要求。<br><img src="/uploads/2015/08/dphy_fig30.png" alt=""><br><img src="/uploads/2015/08/dphy_fig31.png" alt=""></p>
+<h4 id="7-6-6-Lane内部的（指一个Lane的两根差分线之间）静态偏斜"><a href="#7-6-6-Lane内部的（指一个Lane的两根差分线之间）静态偏斜" class="headerlink" title="7.6.6 Lane内部的（指一个Lane的两根差分线之间）静态偏斜"></a>7.6.6 Lane内部的（指一个Lane的两根差分线之间）静态偏斜</h4><p>数据Lane和时钟Lane上差分对上的信号延时应该小于 UI/50,对于所有至fh，包含fh的频率。<br><img src="/uploads/2015/08/dphy_766.png" alt=""></p>
+<h3 id="7-7-发送与接收特性"><a href="#7-7-发送与接收特性" class="headerlink" title="7.7 发送与接收特性"></a>7.7 发送与接收特性</h3><p>在TLIS的边上，Lane包含两个RX-TX模块，每边一个。这个段落说明在HS模式下这些RX-TX的反射行为（回波损耗）。所有RX-TX模块内的可能功能模块的信号特性能够在8节中找到。发送端和接由端的线终端低频阻抗范围是80-125欧。</p>
+<h4 id="7-7-1-差分特性"><a href="#7-7-1-差分特性" class="headerlink" title="7.7.1 差分特性"></a>7.7.1 差分特性</h4><p>在高速接收模式Lane模块的差分反射规范如图32。<br><img src="/uploads/2015/08/dphy_fig32.png" alt=""><br>在高速发送模式Lane模块的差分反射规范如图33。<br><img src="/uploads/2015/08/dphy_fig33.png" alt=""></p>
+<h4 id="7-7-2-通用模式特性"><a href="#7-7-2-通用模式特性" class="headerlink" title="7.7.2 通用模式特性"></a>7.7.2 通用模式特性</h4><p>常规模式回波损耗不同于高速发送和接收模式，因为接收没有直流端接地。对于一个活动的发送，普通模式的反射应该小于-6dB,从f&#95;LP,MAX到f&#95;MAXr 的频率范围。对于一个接收反射应该小于-6db，从f&#95;INT,MIN到f&#95;MAX的频率范围内。如果一个高直流普通模式阻抗意味着在终端中心点上有一个大的电容。最小值是所允许的整数。对普通模式终端而言，减小RF干涉的影响相当重要，接收环境限制了最大的有效带宽。<br><img src="/uploads/2015/08/dphy_fig34.png" alt=""></p>
+<h4 id="7-7-3-模式转换限式"><a href="#7-7-3-模式转换限式" class="headerlink" title="7.7.3 模式转换限式"></a>7.7.3 模式转换限式</h4><p>TX和RX的由差分到普通模式的转输限制应该是-26dB,在f&#95;MAX范围内。</p>
+<h4 id="7-7-4-Lane内部匹配"><a href="#7-7-4-Lane内部匹配" class="headerlink" title="7.7.4 Lane内部匹配"></a>7.7.4 Lane内部匹配</h4><p>在多路Lanes间的差分回波损耗应该小于-26dB,在f&#95;MAX的所有范围内。</p>
+<h2 id="8-电气指标"><a href="#8-电气指标" class="headerlink" title="8. 电气指标"></a>8. 电气指标</h2><p>一个PHY可能包含以下电气功能模块：一个高速发送器（HS-TX），一个高速接收器（HS-RX），一个低功耗发送器（LP-TX），一个低功耗接收器（LP-RX），低功耗连接检测器（LP-CD）。一个PHY不需要包含所有的电气功能模块，只要包含一个典型PHY配置所要求的功能模块。每个配置要求的功能模块在第4节中规范。所有包含在任何PHY里的电气功能都应符合本节的规范。图35展示了一个全功能PHY发送器的完整的电气功能集。<br><img src="/uploads/2015/08/dphy_fig35.png" alt=""><br>高整发送器和接收器是用于传输高速数据和时钟信号。高速发送器和接收器利用低压差分信号进行信号传输。高速接收器包含一个可转换的并行终端。<br>低功耗发送器和接收器是为低功耗信号机制服务的。低功耗发送器是一个推挽式的驱动器，低功耗接收器是一个非匹配，单端接收器。<br>电平信号对于HS模式和单端LP模式是不同的。图36同时展示了HS和LP信号，分别在左边和右边。高速信号电平比LP低电平输入阈值还要低，因此LP接收器总是将HS信号检测为低。<br>在传输端所有绝对电平是以地作为参考电压。<br><img src="/uploads/2015/08/dphy_fig36.png" alt=""><br>在常规操作中，LP模式和HS模式可以进行Lane交换。双向Lanes还能交换通信方向。改变操作模式或者通信方向，通过使能或者禁能相应的电气功能来实现。这些使能和禁能信号不能引起线上的毛刺，否则会导至检测到一个不正确的电平信号。因此，所有的模式和操作方向的改变都应当平滑，并且总是确保适合线信号检测。</p>
+<h3 id="8-1-发送器电气指标"><a href="#8-1-发送器电气指标" class="headerlink" title="8.1 发送器电气指标"></a>8.1 发送器电气指标</h3><h4 id="8-1-1-高速发送"><a href="#8-1-1-高速发送" class="headerlink" title="8.1.1 高速发送"></a>8.1.1 高速发送</h4><p>Dp和Dn引脚上驱动的高速差分信号由一个差分驱动器产生。参考，Dp被认为是正端，Dn被认为是负端。Lane的状态被叫作Differential-1(HS-1),当Dp比Dn幅值高。当Dp比Dn的幅值低时被叫作Lane的Differential-0(HS-0)状态。图37给出了一个HS发送器的实现实例。<br>注意，在本节中所用的Dp和Dn是相关于Lane模块，而不考虑这个脚到底是属于数据Lane模块还是时钟Lane模块。<br><img src="/uploads/2015/08/dphy_fig37.png." alt=""><br>差分输出电压V&#95;OD被定义为Dp脚上的V&#95;DP电压和Dn脚上的V&#95;DN电压之差。<br><img src="/uploads/2015/08/dphy_vod.png" alt=""><br>V&#95;DP和V&#95;DN的电压不能超过最大输出电压V&#95;OHHS。V&#95;OLHS是Dp和Dn引脚上的高速输出低电压，这取决于V&#95;OD和V&#95;CMTX。高速V&#95;OUT是最小值V&#95;OLHS和最大值V&#95;OHHS的边界。<br>普通模式电压V&#95;CMTX由以下公式定义<br><img src="/uploads/2015/08/dphy_V_CMTX.png" alt=""><br>对于理想HS信号的V&#95;OD和V&#95;CMTX如果38所示。图38展示了单端高速信号号可能的畸变种类，由差分输出和普通模式电压构成。V&#95;OD和V&#95;CMTX对于引脚上的Differential-1和Differential-0可能有细微的差别。输出的差分电压不匹配 ΔVOD,被定义为差分0电压（V&#95;OD(1)）和差分1电压（V&#95;OD(0)）的压差。<br><img src="/uploads/2015/08/dphy_delta_vod.png" alt=""><br>如果V&#95;CMTX(1)和V&#95;CMTX(1)分别是静态差分0和差分1对应的普通模式电压，那么普通模式的参考电压被定义为<br>V&#95;CMTX,REF = V&#95;CMTX(1) + V&#95;CMTX(0) / 2<br>普通模式的瞬变电压被定义为<br><img src="/uploads/2015/08/dphy_delta_cmtx.png" alt=""><br>在差分0和差分1之间的静态普通模式电压差被定义为<br><img src="/uploads/2015/08/dphy_cmtx_0_1.png" alt=""><br>发送方以高频率或低频率发送数据时分别不应走哪过∆V&#95;CMTX(HF)和∆V&#95;CMTX(LF)。一个测量V&#95;OD和V&#95;CMTX的测试电路如图40。<br><img src="/uploads/2015/08/dphy_fig38.png" alt=""><br><img src="/uploads/2015/08/dphy_fig39.png" alt=""><br><img src="/uploads/2015/08/dphy_fig40.png" alt=""><br>在发送器Dp和Dn上的输出阻抗被定义为Z&#95;OS。ΔZ&#95;OS是Dp和Dn引脚上两都值抗的不匹配值，设Z&#95;OSDP和Z&#95;OSDN分别为Dp和Dn引脚上的阻抗。ΔZ&#95;OS定义公式如下：<br><img src="/uploads/2015/08/dphy_delta_zos.png" alt=""><br>输出阻抗Z&#95;OS和输出失配阻抗ΔZ&#95;OS必须在所有允许加载的条件下对于差分0和差分1同时兼容表16.推荐实现保持输出阻抗在传输态时的值尽可能接近在静止态的值。输出阻抗Z&#95;OS由Dp和Dn上注入的AC电流和测量到的峰峰值幅度决定。<br>上升沿和下降沿时间t&#95;R和t&#95;F分别被定义为传输时间对应于的20%、80%HS信号摆幅。驱动器必须让t&#95;R和t&#95;F在所有允许的Z&#95;ID下符合规范。常规传输的TX回波损耗和差分TX模式的回波损耗在第7节中可以被找到。<br>推荐高速发送器直接终接到它的引脚上，不产生任何过冲为了最小化EMI。<br><img src="/uploads/2015/08/dphy_tab16.png" alt=""><br>注意：<br>1. 以上值对所有Z&#95;ID范围内的负载阻抗都适合。<br>2. 推荐实现时最小化∆V&#95;OD 和 ∆V&#95;CMTX(1,0)为了最小化辐射和最优化信号完整性。</p>
+<p><img src="/uploads/2015/08/dphy_tab17.png" alt=""><br>注意：<br>1. UI等于1/(2*fh)。fh的定义参见7.3节。</p>
+<h4 id="8-1-2-低功耗发送"><a href="#8-1-2-低功耗发送" class="headerlink" title="8.1.2 低功耗发送"></a>8.1.2 低功耗发送</h4><p>低功耗发送器应该是一个转换速率可控的推挽驱动器。它被用于去驱动在所有低功耗操作模式的线。它因此也很重要，LP发送器尽可能低的静态电能消耗。信号传输的转换速率是被界定的为了去保持较低的EMI。图41展示了一个LP发送器的例子。<br><img src="/uploads/2015/08/dphy_fig41.png" alt=""><br>V&#95;OL是。。。输出，在LP传输模式下的低电压。这是一个未加载引脚在低电平状态的电压。V&#95;OH是。。。输出，高电平电压是在高电平状态，当引脚不是被加载。LP发送器不应该驱动引脚潜能静态超越V&#95;OH的最大值。LP发送器的上拉和下拉输出阻抗将在图42和图43中分别描述。图44展示了V&#95;OL和V&#95;OH的测量电路。<br><img src="/uploads/2015/08/dphy_fig42.png" alt=""><br><img src="/uploads/2015/08/dphy_fig43.png" alt=""><br><img src="/uploads/2015/08/dphy_fig44.png" alt=""><br>Z&#95;OLP阻抗被定义为：<br><img src="/uploads/2015/08/dphy_zolp.png" alt=""><br>T&#95;RLP和T&#95;FLP分别是LP发送器驱动一个容性负载C&#95;LOAD时输出信号电压15%-85%的上升和下降时间。15%-85%电平是相对于稳定的V&#95;OH和V&#95;OL电压。slew率 δV/δt&#95;SR是LP发送器输出信号电压过冲。LP发送器的输出信号过渡应该满足表19，图45，图46所示的最大最小slew率。设定一个最大的slew率值的意图是为了限制EMI。<br><img src="/uploads/2015/08/dphy_fig18_1.png" alt=""><br>备注：<br>1. 参见图42和图43.<br>2. 尽管没有规定Z&#95;OLP的最大值，LP发送器的输出阻抗必须确保T&#95;RLP/T&#95;FLP规范是符合的。<br><img src="/uploads/2015/08/dphy_tab19.png" alt=""><br>备注：<br>1. C&#95;LOAD包含低频等议传输线电容。<br>2. 输出电压是400mV和930mV。<br>3. 测量平均正交任何50mV段的输出信号传输。<br>4. 这个参数值能够低于T&#95;LPX取决于差分在上升 VS. 下降信号斜坡和触发电平还有LP发送器的Dp和Dn失配。任何LP执行或操作脉冲观察到在HS的EoT(传输从HS电平到LP-11)是故障行为如8.2.2节中描述的。<br>5. T&#95;REOT上升时间起始于HS常规电平在差分振幅下降到70mV,取决于停止差分驱动器。<br>6. 在一个额外的容性负载C&#95;CM在0-60pF在终端中心点在Lane的RX端。<br>7. 这个值描绘了一个拐点在一个piecewise线性曲线，见图45和图46.<br>8. 输出电压在V&#95;PIN(absmax)规定的范围内。<br>9. 输出电压在400mV和700mV。<br>10. V&#95;O,INST是一个瞬时输出电压，V&#95;DP或V&#95;DN，以毫伏为单位。<br>11. 输出电压在700mV和930mV。</p>
+<p>每一个LP状态的持续有最小要求。决定LP状态区间，Dp和Dn信号线是分别与通用触发电平。这些比较结果是执行OR操作去履行一个单端推train。执行时钟OR的输出能够被用来去找到LP发送器的最小输出脉宽。<br>用一个通用触发电平在[V&#95;IL,MAX + V&#95;OL,MIN， V&#95;IH,MIN + V&#95;OL,MAX]，执行OR时钟不应包含比T&#95;MIN-TX短的脉宽。<br><img src="/uploads/2015/08/dphy_fig45.png" alt=""><br><img src="/uploads/2015/08/dphy_fig46.png" alt=""></p>
+<h3 id="8-2-接收器电气指标"><a href="#8-2-接收器电气指标" class="headerlink" title="8.2 接收器电气指标"></a>8.2 接收器电气指标</h3><h4 id="8-2-1-高速接收"><a href="#8-2-1-高速接收" class="headerlink" title="8.2.1 高速接收"></a>8.2.1 高速接收</h4><p>高速接收器是一个差分线接收器。它包含一个开关并行输入终端，Z&#95;ID，在正输入脚Dp和负输入脚Dn。一个简单的例图，用PMOS输入实现，如图47。<br><img src="/uploads/2015/08/dphy_fig46.png" alt=""><br>HS接收器的差分输入电压的高低阈值由V&#95;IDTH和V&#95;IDTL分别定义。V&#95;ILHS和V&#95;IHHS是单端，分别是输入高低电平。V&#95;CMRX(DC)是差分输入普通模式电压。HS接收器应能去检差在Dp和Dn输入信号脚的差分信号，同时在信号电压V&#95;DP和V&#95;DN，在通用模式电压范围内，并且如果V&#95;DP和V&#95;DN极端差分电压V&#95;IDTH或V&#95;IDTL。高速接收器应该接收正确高速信号当注入普通模式干涉∆V&#95;CMRX(HF)和∆V&#95;CMRX(LF)。<br>在HS接收器操作期间，终端阻抗Z&#95;ID是被要求的，在高速接收器的Dp和Dn引脚之间。Z&#95;ID应该被禁能当模块不是在高速接收模式。在从低功耗模式到高速接收模式，终端阻抗应该被禁能，直到Dp、Dn上的终端输入电压下降到V&#95;TERM&#95;EN。为了符合要求，接收器不需要对Dp和Dn线敏感去决定什么时候应该使能终端线，宁可LP到HS传输时序能够允许线电压下降到适当电平，在线终端被使能之前。<br>RX普通模式回波损耗和RX差分模式回波损耗在第7节中作了规定。C&#95;CM是普通模式AC终端，它保证在高频时接收器有一个合适的终止。对高数据速率而言，C&#95;CM需要在终止中心点为了符合普通模式反射要求。<br><img src="/uploads/2015/08/dphy_tab20.png" alt=""><br>备注：<br>1. 排除可能超过450MHZ正弦波100mV峰值电压额外RF干涉。<br>2. 这个表的值包含在发射机和接收机之间的50mV接地差。<br><img src="/uploads/2015/08/dphy_tab21.png" alt=""><br>备注：<br>1. 排除“静态”50mV地移。<br>2. ΔV&#95;CMRX(HF)是叠回在接收器输入端的正弦波峰值幅值。<br>3. 对高比特率，将需要一个14pF电容，为了符合普通模工回波损耗规范。<br>4. 对普通模式平均DC的差分比较电压。</p>
+<h4 id="8-2-2-低功耗接收"><a href="#8-2-2-低功耗接收" class="headerlink" title="8.2.2 低功耗接收"></a>8.2.2 低功耗接收</h4><p>低功耗接收器是一个非终端，单端接收电路。LP接收器是用来去检测每个引脚上的低功耗状态。为了高稳定性，LP接收器应该过滤澡声脉冲和RF干涉。推荐实现者优化LP接收器以便于低功耗。<br>输入低电平电压，V&#95;IL，是接收器在输入信号引脚要求去检测低状态的电压。一个更低的输入电压，V&#95;IL&#95;ULPUS，有可能有用，当接收器进入到超低功耗状态时。V&#95;IL大于在HS传输期间最大的单端线电压。因此，LP接收器在HS信号期间应该检测到低电平。<br>输入高信号电压，V&#95;IH，是接收器所要求的能够在信号输入口检出高状态的电压。为了降低对接收信号的噪声敏感性，LP接收器应该包括一个滞后，滞后电压被定义为V&#95;HYST。<br>LP接收器应该注入任何输入信号小于e&#95;SPIKE。传播到LP接收器的信号脉冲应该宽于T&#95;MIX-RX。<br>更进一步，LP接收器必须能够对想要的信号顶部的超定位RF干涉具有容忍能力。这意味着一个输入信号滤波器。LP接收器应该符合所有的干涉峰值幅度V&#95;INT和频率f&#95;INT。干涉应该不引起在信号传输期间进行的正确操作的故障。<br><img src="/uploads/2015/08/dphy_fig48.png" alt=""><br><img src="/uploads/2015/08/dphy_tab22.png" alt=""><br><img src="/uploads/2015/08/dphy_tab23.png" alt=""><br> 备注：<br>1. 实时电压是在LP-0状态时突破V&#95;IL或者在LP-1状态时低于V&#95;IH的融合电压。<br>2. 输入脉冲少于这个值将不能改变接收器的状态。<br>3. 除了所要求的瞬态抑制，实施者应该确保抑制已知RF干涉。<br>4. 输入脉宽大于这个值将不能触发输出。</p>
+<h3 id="8-3-线连接检测"><a href="#8-3-线连接检测" class="headerlink" title="8.3 线连接检测"></a>8.3 线连接检测</h3><p>低功耗接收器和独立的连接检测器（LP-CD）应该被用在一个非双向数据Lane去反映每个低功耗信号的线电压。这是被要求去检测线连接因为在6.1节中描述。低功耗接收器应该被用来去检测一个LP高失败在LP发送器驱动高，并且引脚电压小于V&#95;IL。参考表22。LP-CD应该被用去检测一个LP低错误，当LP发送器驱动低电平，在引脚上的电压大于V&#95;IHCD。参见表24。当引脚 电压小于V&#95;ILCD时LP低电平错误不应该被检测到。<br>大体上讲，连接操作检测跟LP接收器低于阈值电压很相似。尽管DC规范不同，LP-CD的AC规范定义和LP接收器的一致，并且LP-CD应该符合表23的规定，险了T&#95;MIN-RX外。LP-CD应该足以过滤输入信号以避免误触发。<br>图49展示了LP-CD阈值电压（V&#95;ILCD, V&#95;IHCD）和普通信号电压。<br><img src="/uploads/2015/08/dphy_fig49.png" alt=""><br><img src="/uploads/2015/08/dphy_tab24.png" alt=""></p>
+<h3 id="8-4-输入特性"><a href="#8-4-输入特性" class="headerlink" title="8.4 输入特性"></a>8.4 输入特性</h3><p>PHY中没有结构会被破坏，当DC信号附带有信号电压范围内的V&#95;PIN在未定义的时间周期内被施加到引脚上时的。V&#95;PIN(absmax)是在发送器引脚上的最大传输输出电压。在大于一个周期T&#95;VPIN(absmax)的情况下发送器输出引脚上的电压不应该超过V&#95;PIN,MAX。当PHY是在低功耗接收模式时，引脚上的峰值电流是I&#95;LEAK，同时引脚信号电压在信号电压V&#95;PIN范围内。支持互操作的PHY在LP模式下的I&#95;LEAK的规范由LP发送器的负载电压约束。图50展动漫了一个测量峰值电流的测试电路图。<br>在主机和从机之间的地电压变化应当小于V&#95;GNDSH。<br><img src="/uploads/2015/08/dphy_fig50.png" alt=""><br><img src="/uploads/2015/08/dphy_tab25.png" alt=""><br>备注：<br>1. 引脚信号电压在V&#95;GNDSH,MIN 到 V&#95;OH —+ V&#95;GNDSH,MAX 的信号电压范围内，并且Lane模块处理LP接收模式。<br>2. 超过V&#95;PIN的上冲和下冲电压只允许在任何LP-0到LP-1传输之后20ns的时间窗口内，或者在静默期。对其它情况，它必须稳定在V&#95;PIN范围内。<br>3. 这个值包含了地电压变化。</p>
+<h2 id="9-高速时钟时序"><a href="#9-高速时钟时序" class="headerlink" title="9. 高速时钟时序"></a>9. 高速时钟时序</h2><p>本节规定了在高速信号接上的时序要求，它独立于信电气参数。PHY是一个前向源同步接口。无论是正信或者反向信号模式，有且仅有一个时钟源。在反向模式下，时钟仍然以前向传输，四个边沿中的一个被用于发送数据。<br>数据传输可能发生在任何大于所规定的最小比特率时间。<br>图51展示了一个兼容测量时序规范的PHY配置。 注意，由于寄生效应的作用在每种封装内的信号劣化的影响被包含在了接收器和发送器的时序预算中，但没包含连接上的劣化预算。详见第7节。<br><img src="/uploads/2015/08/dphy_fig51.png" alt=""></p>
+<h3 id="9-1高速时钟时序"><a href="#9-1高速时钟时序" class="headerlink" title="9.1高速时钟时序"></a>9.1高速时钟时序</h3><p>链接的主机端发送差分信号给从机端，用于数据采样。这个信号是DDR时钟，并且在每一个bit时间将会有一个传输。所有与正确采样相关的时序要求被定义都与时钟传输相关。因此，实现者应该用一个独立的时钟频率模块去降低EMI。<br>DDR时钟信号应该维持与数据信号的正交相位关系。数据在每个时钟的上升沿和下降沿采样。“上升沿”是指差分信号的上升沿，也就是CLKp——CLKn，类似于”下降沿“。因此，时钟信号的周期应该是两个成功的瞬时数据位时间的总和。 这种关系如图52所示。<br>注意在图52中的UI表明在瞬时UI，并且应该小于12.5ns。没有规定最小值。因此，实现者应该定义一个最大的传输速率，并且与最大时钟频率fh&#95;MAX相一致。关于fh&#95;MAX的描述见7.3节。<br><img src="/uploads/2015/08/dphy_fig52.png" alt=""><br>如图51所示，同样的时钟源被用来去产生DDR时钟和发送串行数据。因为时钟和数据信号通过有着特定倾斜的同一个通道传播，时钟在接收端可能被直接用来采样数据线。因此，系统能够容纳在UI里的大量瞬时变量。<br>瞬时UI变量是被允许能够导致大量、睡变数据速率变量。因此，设备应该采用PHY外的FIFO去容纳这些瞬时变量，或者提供一个精准的时钟源给Lane模块用于去消除这些瞬时变量。<br>UI&#95;INST规定的时钟信号在表26中汇总。<br><img src="/uploads/2015/08/dphy_tab26.png" alt=""><br>注意：<br>    1. 这个值对应于最低80Mbps的数据速率。<br>    2. 在单个信号位周期最小的UI应该不被违反，即任意数据突发的DDR半周期。</p>
+<h3 id="9-2-前向高速数据传输时序"><a href="#9-2-前向高速数据传输时序" class="headerlink" title="9.2 前向高速数据传输时序"></a>9.2 前向高速数据传输时序</h3><p>图53展示了DDR时钟差分信号与数据差分信号的时序关系。数据被发送在正交相位关系相对于时钟，因此时钟信号边沿可以被接收器直接用于进行接收数据采样。<br>发送器应确保DDR时钟的上升沿被发送在突发传输的第一个载荷位，因此第一个载荷位能够在时钟上升沿的被接收器采样，第二个位能在下降沿被采样，接下来的位交替在上升沿和下降沿被采样。<br>所有的时序值被测量，遵照实际观测到的差分时钟信号交叉。效果取决于在这个电平上的变化量，包括时钟与数据的时序裕量。<br>接收器输入偏移和阈值影响将会被认为是接收器建立和保持参数的一部分。<br><img src="/uploads/2015/08/dphy_fig53.png" alt=""></p>
+<h4 id="9-2-1-Data-Clock时序详述"><a href="#9-2-1-Data-Clock时序详述" class="headerlink" title="9.2.1 Data-Clock时序详述"></a>9.2.1 Data-Clock时序详述</h4><p>数据时钟时序指标在图27中展示。实现者应该指定一个UI&#95;INST,MIN值，去代表最小的瞬时UI，在一个高速数据发送的指定实现下。表27参数被作为这个值的一部分定义。倾斜规范，T&#95;SKEW[TX]，被允许偏离数据发送时间以1/2UI&#95;INST取代正交相位时钟沿。建立和保持时间，T&#95;SETUP[RX]和T&#95;HOLD[RX]，分别描述在数据和时钟间的相关时序。T&#95;SETUP[RX]是数据应该在上升沿或者下降沿应该被呈现最小时间，T&#95;HOLD[RX]，是数据在当前上升沿或者下降沿之后仍被维持的最小时间。接收器的时序裕量指标代表在接收器上被观察到的最小变量，为了接收端的操作能在规范定义的最大可接受的误码率。<br>时序裕量0.4&#42;UI&#95;INST，即±0.2&#42;UI的意图是为了在连上的信号劣化。<br><img src="/uploads/2015/08/dphy_tab27.png" alt=""><br>注意：<br>    1. 总的封装延时裕量是0.3_UI&#95;INST。<br>    2. 总的接收器的建立和保持窗口是0.3_UI&#95;INST。</p>
+<h3 id="9-3-反向高速数据传输"><a href="#9-3-反向高速数据传输" class="headerlink" title="9.3 反向高速数据传输"></a>9.3 反向高速数据传输</h3><p>本节只用于半双工Lane模块，包含反向高速数据发送功能。<br>一个Lane通过在第5.5节描述的链路转向流程进入反向高速数据发送模式。反向数据发送不是源同步的；时钟信号是被主机驱动的同时数据是被从机驱二甲双胍的。从机发送器应该在每两个接收时钟信号周期发送一个数据位。因此，对于一个给定的时钟频率而言，反向数据速率是前向数据速率的1/4。在这种情况下的数据周期被定义为4*UI&#95;INST。UI&#95;INST是前向传速全速率值。<br>注意，时钟源的频率在突发传输期间是可以改变的。然而，所有的数据Lane应该进入低功耗模式在改变时钟源频率之前。<br>反向高速数据传输的概念总览如图54所示。<br><img src="/uploads/2015/08/dphy_fig54.png" alt=""><br>在反向模式下数据信号和时钟信号之间有四种可能的相位关系。用于发送数据的时钟相位由从机端决定，但是一旦选定了就应在整个突发传输中固定下来。在连接上的信号延时，与主机端和从机端的内部信号延时混在一起，将导致在主机模块与被接收的（反向）数据和它自身（前向）的时钟之间未知的相位关系。因此，反向通信抵达主机端时它可能不会与前向时钟的相位对齐。<br>在时钟和数据之间的同步是通过从机端的开始传输（SoT）序列来完成实现的。主机应该有足够的能力去正确地采样接收到的数据，在发送给从机的时钟是给定的瞬时UI变量情况下。<br>从机端的反向传输是正向传速率的四分之一，基于前向时钟是通过时钟Lane传输。这个比率是便于主机端容易找到一个合适的相位去恢复在反向传输中的数据。<br>已知的接收同步过渡将被用于为数据采样时钟选择一个合适的相位。因此，没有必要指定一个环回延迟在时钟源和数据接收器之间。<br>从机端的反向传输时序如图55<br><img src="/uploads/2015/08/dphy_fig55.png" alt=""></p>
+<h2 id="10-管理机构要求"><a href="#10-管理机构要求" class="headerlink" title="10. 管理机构要求"></a>10. 管理机构要求</h2><p>所有基于MIPI D-PHY设备的设计应符合适用的管理机构要求。</p>
+<h2 id="附录A——-PPI的一个逻辑描述（信息）"><a href="#附录A——-PPI的一个逻辑描述（信息）" class="headerlink" title="附录A—— PPI的一个逻辑描述（信息）"></a>附录A—— PPI的一个逻辑描述（信息）</h2><h3 id="A-1-信号描述"><a href="#A-1-信号描述" class="headerlink" title="A.1 信号描述"></a>A.1 信号描述</h3><h3 id="A-2-由主机进行高速发送"><a href="#A-2-由主机进行高速发送" class="headerlink" title="A.2 由主机进行高速发送"></a>A.2 由主机进行高速发送</h3><h3 id="A-3-从机高速接收"><a href="#A-3-从机高速接收" class="headerlink" title="A.3 从机高速接收"></a>A.3 从机高速接收</h3><h3 id="A-4-由从机高速发送"><a href="#A-4-由从机高速发送" class="headerlink" title="A.4 由从机高速发送"></a>A.4 由从机高速发送</h3><h3 id="A-5-主机高速接收"><a href="#A-5-主机高速接收" class="headerlink" title="A.5 主机高速接收"></a>A.5 主机高速接收</h3><h3 id="A-6-低功耗发送"><a href="#A-6-低功耗发送" class="headerlink" title="A.6 低功耗发送"></a>A.6 低功耗发送</h3><h3 id="A-7-低功耗接收"><a href="#A-7-低功耗接收" class="headerlink" title="A.7 低功耗接收"></a>A.7 低功耗接收</h3><h3 id="A-8-转向"><a href="#A-8-转向" class="headerlink" title="A.8 转向"></a>A.8 转向</h3><h2 id="附录B——连接设计指导（信息）"><a href="#附录B——连接设计指导（信息）" class="headerlink" title="附录B——连接设计指导（信息）"></a>附录B——连接设计指导（信息）</h2><h3 id="B-1-实际距离"><a href="#B-1-实际距离" class="headerlink" title="B.1 实际距离"></a>B.1 实际距离</h3><h3 id="B-2-RF频率带宽-接口"><a href="#B-2-RF频率带宽-接口" class="headerlink" title="B.2 RF频率带宽: 接口"></a>B.2 RF频率带宽: 接口</h3><h3 id="B-3-传输线设计"><a href="#B-3-传输线设计" class="headerlink" title="B.3 传输线设计"></a>B.3 传输线设计</h3><h3 id="B-4-相关层"><a href="#B-4-相关层" class="headerlink" title="B.4 相关层"></a>B.4 相关层</h3><h3 id="B-5-PCB"><a href="#B-5-PCB" class="headerlink" title="B.5 PCB"></a>B.5 PCB</h3><h3 id="B-6-柔性电路板"><a href="#B-6-柔性电路板" class="headerlink" title="B.6 柔性电路板"></a>B.6 柔性电路板</h3><h3 id="B-7-串连阻抗"><a href="#B-7-串连阻抗" class="headerlink" title="B.7 串连阻抗"></a>B.7 串连阻抗</h3><h3 id="B-8-连接器"><a href="#B-8-连接器" class="headerlink" title="B.8 连接器"></a>B.8 连接器</h3><h2 id="附录C——-D-PHY的8b9b线编码（规范）"><a href="#附录C——-D-PHY的8b9b线编码（规范）" class="headerlink" title="附录C—— D-PHY的8b9b线编码（规范）"></a>附录C—— D-PHY的8b9b线编码（规范）</h2><h3 id="C-1线编码特性"><a href="#C-1线编码特性" class="headerlink" title="C.1线编码特性"></a>C.1线编码特性</h3><h4 id="C-1-1-在协议中使能该功能"><a href="#C-1-1-在协议中使能该功能" class="headerlink" title="C.1.1 在协议中使能该功能"></a>C.1.1 在协议中使能该功能</h4><h4 id="C-1-2-在PHY中使能该功能"><a href="#C-1-2-在PHY中使能该功能" class="headerlink" title="C.1.2 在PHY中使能该功能"></a>C.1.2 在PHY中使能该功能</h4><h3 id="C-2-编码方案"><a href="#C-2-编码方案" class="headerlink" title="C.2 编码方案"></a>C.2 编码方案</h3><h4 id="C-2-1-8b9b-编码属性"><a href="#C-2-1-8b9b-编码属性" class="headerlink" title="C.2.1 8b9b 编码属性"></a>C.2.1 8b9b 编码属性</h4><h4 id="C-2-2-数据码：基本的编码指令"><a href="#C-2-2-数据码：基本的编码指令" class="headerlink" title="C.2.2 数据码：基本的编码指令"></a>C.2.2 数据码：基本的编码指令</h4><h4 id="C-2-3-命令码：unique-例外码"><a href="#C-2-3-命令码：unique-例外码" class="headerlink" title="C.2.3 命令码：unique 例外码"></a>C.2.3 命令码：unique 例外码</h4><h4 id="C-2-4-控制码：正则例外码"><a href="#C-2-4-控制码：正则例外码" class="headerlink" title="C.2.4 控制码：正则例外码"></a>C.2.4 控制码：正则例外码</h4><h3 id="C-3-D-PHY操作"><a href="#C-3-D-PHY操作" class="headerlink" title="C.3 D-PHY操作"></a>C.3 D-PHY操作</h3><h4 id="C-3-1-载荷：数据与控制"><a href="#C-3-1-载荷：数据与控制" class="headerlink" title="C.3.1 载荷：数据与控制"></a>C.3.1 载荷：数据与控制</h4><h4 id="C-3-2-高速传输细节"><a href="#C-3-2-高速传输细节" class="headerlink" title="C.3.2 高速传输细节"></a>C.3.2 高速传输细节</h4><h4 id="C-3-3-低功耗传输细节"><a href="#C-3-3-低功耗传输细节" class="headerlink" title="C.3.3 低功耗传输细节"></a>C.3.3 低功耗传输细节</h4><h3 id="C-4-错误信息"><a href="#C-4-错误信息" class="headerlink" title="C.4 错误信息"></a>C.4 错误信息</h3><h3 id="C-5-PPI扩展"><a href="#C-5-PPI扩展" class="headerlink" title="C.5 PPI扩展"></a>C.5 PPI扩展</h3><h3 id="C-6-完整的编码指令集"><a href="#C-6-完整的编码指令集" class="headerlink" title="C.6 完整的编码指令集"></a>C.6 完整的编码指令集</h3>
+      
+    </div>
+    
+  </div>
+  
+    
+    <div class="copyright">
+        <p><span>本文标题:</span><a href="/2015/08/18/fpga-e8-a7-a3-e7-a0-81mipi-csi-ef-bc-88-e4-b8-80-ef-bc-89-d-phy-e7-90-86-e8-a7-a3/">FPGA解码MIPI CSI（一）——D-PHY理解</a></p>
+        <p><span>文章作者:</span><a href="/" title="访问 shawge 的个人博客">shawge</a></p>
+        <p><span>发布时间:</span>2015年08月18日 - 10时24分</p>
+        <p><span>最后更新:</span>2016年07月30日 - 10时08分</p>
+        <p>
+            <span>原始链接:</span><a class="post-url" href="/2015/08/18/fpga-e8-a7-a3-e7-a0-81mipi-csi-ef-bc-88-e4-b8-80-ef-bc-89-d-phy-e7-90-86-e8-a7-a3/" title="FPGA解码MIPI CSI（一）——D-PHY理解">http://hex55.com/2015/08/18/fpga-e8-a7-a3-e7-a0-81mipi-csi-ef-bc-88-e4-b8-80-ef-bc-89-d-phy-e7-90-86-e8-a7-a3/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://hex55.com/2015/08/18/fpga-e8-a7-a3-e7-a0-81mipi-csi-ef-bc-88-e4-b8-80-ef-bc-89-d-phy-e7-90-86-e8-a7-a3/　　作者: shawge" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <script src="/js/clipboard.min.js"></script>
+            <script> var clipboard = new Clipboard('.copy-path'); </script>
+        </p>
+        <p>
+            <span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" title="中国大陆 (CC BY-NC-SA 3.0 CN)" target = "_blank">"署名-非商用-相同方式共享 3.0"</a> 转载请保留原文链接及作者。
+        </p>
+    </div>
+
+
+
+<nav id="article-nav">
+  
+    <a href="/2015/08/20/sep4020-nandflash-e5-90-af-e5-8a-a8-e8-af-a6-e8-a7-a3-ef-bc-8c-e4-b8-8d-e5-90-8c-e9-98-b6-e6-ae-b5-e5-ad-98-e5-82-a8-e5-99-a8-e6-98-a0-e5-b0-84-e7-a4-ba-e6-84-8f-e5-9b-be/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption"><</strong>
+      <div class="article-nav-title">
+        
+          SEP4020 NandFlash启动详解，不同阶段存储器映射示意图
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2015/08/17/e5-ae-8c-e5-85-a8-e4-bf-ae-e5-a4-8dwin7-e5-bc-95-e5-af-bc/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">完全修复WIN7引导</div>
+      <strong class="article-nav-caption">></strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+    <div id="toc" class="toc-article">
+    <strong class="toc-title">文章目录</strong>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-概览"><span class="toc-number">1.</span> <span class="toc-text">1. 概览</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-展望"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 展望</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-意图"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 意图</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-术语"><span class="toc-number">2.</span> <span class="toc-text">2. 术语</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-定义"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-缩写"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 缩写</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-首字母简写"><span class="toc-number">2.3.</span> <span class="toc-text">2.2 首字母简写</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-D-PHY简介"><span class="toc-number">3.</span> <span class="toc-text">3. D-PHY简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-PHY功能概述"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 PHY功能概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-必须要实现的功能"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 必须要实现的功能</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-体系架构"><span class="toc-number">4.</span> <span class="toc-text">4. 体系架构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-Lane-模块"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 Lane 模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-主机和从机"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 主机和从机</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-高频时钟的产生"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 高频时钟的产生</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-时钟Lane、数据Lane、物理协议接口-PPI"><span class="toc-number">4.4.</span> <span class="toc-text">4.4 时钟Lane、数据Lane、物理协议接口(PPI)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-Lane的可选项"><span class="toc-number">4.5.</span> <span class="toc-text">4.5 Lane的可选项</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-6-Lane模块的类型"><span class="toc-number">4.6.</span> <span class="toc-text">4.6 Lane模块的类型</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-6-1单向数据Lanes"><span class="toc-number">4.6.1.</span> <span class="toc-text">4.6.1单向数据Lanes</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-6-2双向数据Lanes"><span class="toc-number">4.6.2.</span> <span class="toc-text">4.6.2双向数据Lanes</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#4-6-2-1没有高速反向通信的单向数据Lane"><span class="toc-number">4.6.2.1.</span> <span class="toc-text">4.6.2.1没有高速反向通信的单向数据Lane</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#4-6-2-2有高速反向通信的双向数据Lane"><span class="toc-number">4.6.2.2.</span> <span class="toc-text">4.6.2.2有高速反向通信的双向数据Lane</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-6-3时钟Lane"><span class="toc-number">4.6.3.</span> <span class="toc-text">4.6.3时钟Lane</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-7-配置"><span class="toc-number">4.7.</span> <span class="toc-text">4.7 配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-7-1单向配置"><span class="toc-number">4.7.1.</span> <span class="toc-text">4.7.1单向配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-7-1-1单数据Lane的PHY配置"><span class="toc-number">4.7.2.</span> <span class="toc-text">4.7.1.1单数据Lane的PHY配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-7-1-2多数据Lane的PHY配置"><span class="toc-number">4.7.3.</span> <span class="toc-text">4.7.1.2多数据Lane的PHY配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-7-1-3双重单工（两个方向的单向Lanes）"><span class="toc-number">4.7.4.</span> <span class="toc-text">4.7.1.3双重单工（两个方向的单向Lanes）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-7-2-双向半双工配置"><span class="toc-number">4.8.</span> <span class="toc-text">4.7.2 双向半双工配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-7-2-1-单数据Lane的PHY配置"><span class="toc-number">4.8.1.</span> <span class="toc-text">4.7.2.1 单数据Lane的PHY配置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-7-2-2-多数据Lane的PHY配置"><span class="toc-number">4.8.2.</span> <span class="toc-text">4.7.2.2 多数据Lane的PHY配置</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-7-3-混合数据Lane配置"><span class="toc-number">4.9.</span> <span class="toc-text">4.7.3 混合数据Lane配置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-总体操作"><span class="toc-number">5.</span> <span class="toc-text">5. 总体操作</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-数据传输结构"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 数据传输结构</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#5-1-1-数据单元"><span class="toc-number">5.1.1.</span> <span class="toc-text">5.1.1 数据单元</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-1-2-位序、串化，解串"><span class="toc-number">5.1.2.</span> <span class="toc-text">5.1.2 位序、串化，解串</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-1-3-编码、解码"><span class="toc-number">5.1.3.</span> <span class="toc-text">5.1.3 编码、解码</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-1-4-数据缓冲"><span class="toc-number">5.1.4.</span> <span class="toc-text">5.1.4 数据缓冲</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-Lane状态与传输电平"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 Lane状态与传输电平</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-操作模式：控制、高速、Escape模式"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 操作模式：控制、高速、Escape模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-4-高速数据传输"><span class="toc-number">5.4.</span> <span class="toc-text">5.4 高速数据传输</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#5-4-1-突发数据载荷"><span class="toc-number">5.4.1.</span> <span class="toc-text">5.4.1 突发数据载荷</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-4-2-启动传输"><span class="toc-number">5.4.2.</span> <span class="toc-text">5.4.2 启动传输</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-4-3-结束传输"><span class="toc-number">5.4.3.</span> <span class="toc-text">5.4.3 结束传输</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-4-4-高速数据突发"><span class="toc-number">5.4.4.</span> <span class="toc-text">5.4.4 高速数据突发</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-5-双向数据Lane的转向"><span class="toc-number">5.5.</span> <span class="toc-text">5.5 双向数据Lane的转向</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-6-Escape模式"><span class="toc-number">5.6.</span> <span class="toc-text">5.6 Escape模式</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#5-6-1-远程触发"><span class="toc-number">5.6.1.</span> <span class="toc-text">5.6.1 远程触发</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-6-2-低功耗传输"><span class="toc-number">5.6.2.</span> <span class="toc-text">5.6.2 低功耗传输</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-6-3-超低功状态"><span class="toc-number">5.6.3.</span> <span class="toc-text">5.6.3 超低功状态</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-6-4-Escape模式状态机"><span class="toc-number">5.6.4.</span> <span class="toc-text">5.6.4 Escape模式状态机</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-7-高速时钟传输"><span class="toc-number">5.7.</span> <span class="toc-text">5.7 高速时钟传输</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-8-时钟Lane的超低功耗状态"><span class="toc-number">5.8.</span> <span class="toc-text">5.8 时钟Lane的超低功耗状态</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-9-总体的操作时序参数"><span class="toc-number">5.9.</span> <span class="toc-text">5.9 总体的操作时序参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-10-系统电源状态"><span class="toc-number">5.10.</span> <span class="toc-text">5.10 系统电源状态</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-11-初始化"><span class="toc-number">5.11.</span> <span class="toc-text">5.11 初始化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-12-校准"><span class="toc-number">5.12.</span> <span class="toc-text">5.12 校准</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-13-全局操作流程图"><span class="toc-number">5.13.</span> <span class="toc-text">5.13 全局操作流程图</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-14-数据速率的相关参数"><span class="toc-number">5.14.</span> <span class="toc-text">5.14 数据速率的相关参数</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#5-14-1-只包含UI值的参数"><span class="toc-number">5.14.1.</span> <span class="toc-text">5.14.1 只包含UI值的参数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-14-2-包含时序和UI值的参数"><span class="toc-number">5.14.2.</span> <span class="toc-text">5.14.2 包含时序和UI值的参数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-14-3-只包含时序值的参数"><span class="toc-number">5.14.3.</span> <span class="toc-text">5.14.3 只包含时序值的参数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-14-4-只包和数据速率无关的含时序参数"><span class="toc-number">5.14.4.</span> <span class="toc-text">5.14.4 只包和数据速率无关的含时序参数</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-故障检测"><span class="toc-number">6.</span> <span class="toc-text">6. 故障检测</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-连接检测"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 连接检测</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-错误检测序列"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 错误检测序列</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#6-2-1-SoT错误"><span class="toc-number">6.2.1.</span> <span class="toc-text">6.2.1 SoT错误</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-2-2-SoT同步错误"><span class="toc-number">6.2.2.</span> <span class="toc-text">6.2.2 SoT同步错误</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-2-3-EoT同步错误"><span class="toc-number">6.2.3.</span> <span class="toc-text">6.2.3 EoT同步错误</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-2-4-进入Escape模式错误"><span class="toc-number">6.2.4.</span> <span class="toc-text">6.2.4 进入Escape模式错误</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-2-5-低功耗传输同步错误。"><span class="toc-number">6.2.5.</span> <span class="toc-text">6.2.5 低功耗传输同步错误。</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-2-6-控制失效错误"><span class="toc-number">6.2.6.</span> <span class="toc-text">6.2.6 控制失效错误</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-协议层看门狗（信息）"><span class="toc-number">6.3.</span> <span class="toc-text">6.3 协议层看门狗（信息）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#6-3-1-高速接收超时"><span class="toc-number">6.3.1.</span> <span class="toc-text">6.3.1 高速接收超时</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-3-2-高速发送超时"><span class="toc-number">6.3.2.</span> <span class="toc-text">6.3.2 高速发送超时</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-3-3-Escape模式超时"><span class="toc-number">6.3.3.</span> <span class="toc-text">6.3.3 Escape模式超时</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-3-4-Escape模式静默超时"><span class="toc-number">6.3.4.</span> <span class="toc-text">6.3.4 Escape模式静默超时</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-3-5-回转错误"><span class="toc-number">6.3.5.</span> <span class="toc-text">6.3.5 回转错误</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-连接与Lane配置"><span class="toc-number">7.</span> <span class="toc-text">7. 连接与Lane配置</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-Lane配置"><span class="toc-number">7.1.</span> <span class="toc-text">7.1 Lane配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2-边界条件"><span class="toc-number">7.2.</span> <span class="toc-text">7.2 边界条件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-3-定义"><span class="toc-number">7.3.</span> <span class="toc-text">7.3 定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-4-S-参数详述"><span class="toc-number">7.4.</span> <span class="toc-text">7.4 S-参数详述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-5-条件描述"><span class="toc-number">7.5.</span> <span class="toc-text">7.5 条件描述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-6-连接规范"><span class="toc-number">7.6.</span> <span class="toc-text">7.6 连接规范</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-6-1-差分描述"><span class="toc-number">7.6.1.</span> <span class="toc-text">7.6.1 差分描述</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-6-2-通用模式特性"><span class="toc-number">7.6.2.</span> <span class="toc-text">7.6.2 通用模式特性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-6-3-Intra-Lane-Cross-Coupling"><span class="toc-number">7.6.3.</span> <span class="toc-text">7.6.3 Intra-Lane Cross-Coupling</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-6-4-模式变换的限制"><span class="toc-number">7.6.4.</span> <span class="toc-text">7.6.4 模式变换的限制</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-6-5-Lane内部（指一个Lane的两根差分线之间）的交叉耦合"><span class="toc-number">7.6.5.</span> <span class="toc-text">7.6.5 Lane内部（指一个Lane的两根差分线之间）的交叉耦合</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-6-6-Lane内部的（指一个Lane的两根差分线之间）静态偏斜"><span class="toc-number">7.6.6.</span> <span class="toc-text">7.6.6 Lane内部的（指一个Lane的两根差分线之间）静态偏斜</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-7-发送与接收特性"><span class="toc-number">7.7.</span> <span class="toc-text">7.7 发送与接收特性</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-7-1-差分特性"><span class="toc-number">7.7.1.</span> <span class="toc-text">7.7.1 差分特性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-7-2-通用模式特性"><span class="toc-number">7.7.2.</span> <span class="toc-text">7.7.2 通用模式特性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-7-3-模式转换限式"><span class="toc-number">7.7.3.</span> <span class="toc-text">7.7.3 模式转换限式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-7-4-Lane内部匹配"><span class="toc-number">7.7.4.</span> <span class="toc-text">7.7.4 Lane内部匹配</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-电气指标"><span class="toc-number">8.</span> <span class="toc-text">8. 电气指标</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#8-1-发送器电气指标"><span class="toc-number">8.1.</span> <span class="toc-text">8.1 发送器电气指标</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#8-1-1-高速发送"><span class="toc-number">8.1.1.</span> <span class="toc-text">8.1.1 高速发送</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#8-1-2-低功耗发送"><span class="toc-number">8.1.2.</span> <span class="toc-text">8.1.2 低功耗发送</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-2-接收器电气指标"><span class="toc-number">8.2.</span> <span class="toc-text">8.2 接收器电气指标</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#8-2-1-高速接收"><span class="toc-number">8.2.1.</span> <span class="toc-text">8.2.1 高速接收</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#8-2-2-低功耗接收"><span class="toc-number">8.2.2.</span> <span class="toc-text">8.2.2 低功耗接收</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-3-线连接检测"><span class="toc-number">8.3.</span> <span class="toc-text">8.3 线连接检测</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-4-输入特性"><span class="toc-number">8.4.</span> <span class="toc-text">8.4 输入特性</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-高速时钟时序"><span class="toc-number">9.</span> <span class="toc-text">9. 高速时钟时序</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#9-1高速时钟时序"><span class="toc-number">9.1.</span> <span class="toc-text">9.1高速时钟时序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-2-前向高速数据传输时序"><span class="toc-number">9.2.</span> <span class="toc-text">9.2 前向高速数据传输时序</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#9-2-1-Data-Clock时序详述"><span class="toc-number">9.2.1.</span> <span class="toc-text">9.2.1 Data-Clock时序详述</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-3-反向高速数据传输"><span class="toc-number">9.3.</span> <span class="toc-text">9.3 反向高速数据传输</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-管理机构要求"><span class="toc-number">10.</span> <span class="toc-text">10. 管理机构要求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#附录A——-PPI的一个逻辑描述（信息）"><span class="toc-number">11.</span> <span class="toc-text">附录A—— PPI的一个逻辑描述（信息）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#A-1-信号描述"><span class="toc-number">11.1.</span> <span class="toc-text">A.1 信号描述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#A-2-由主机进行高速发送"><span class="toc-number">11.2.</span> <span class="toc-text">A.2 由主机进行高速发送</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#A-3-从机高速接收"><span class="toc-number">11.3.</span> <span class="toc-text">A.3 从机高速接收</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#A-4-由从机高速发送"><span class="toc-number">11.4.</span> <span class="toc-text">A.4 由从机高速发送</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#A-5-主机高速接收"><span class="toc-number">11.5.</span> <span class="toc-text">A.5 主机高速接收</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#A-6-低功耗发送"><span class="toc-number">11.6.</span> <span class="toc-text">A.6 低功耗发送</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#A-7-低功耗接收"><span class="toc-number">11.7.</span> <span class="toc-text">A.7 低功耗接收</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#A-8-转向"><span class="toc-number">11.8.</span> <span class="toc-text">A.8 转向</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#附录B——连接设计指导（信息）"><span class="toc-number">12.</span> <span class="toc-text">附录B——连接设计指导（信息）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#B-1-实际距离"><span class="toc-number">12.1.</span> <span class="toc-text">B.1 实际距离</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-2-RF频率带宽-接口"><span class="toc-number">12.2.</span> <span class="toc-text">B.2 RF频率带宽: 接口</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-3-传输线设计"><span class="toc-number">12.3.</span> <span class="toc-text">B.3 传输线设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-4-相关层"><span class="toc-number">12.4.</span> <span class="toc-text">B.4 相关层</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-5-PCB"><span class="toc-number">12.5.</span> <span class="toc-text">B.5 PCB</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-6-柔性电路板"><span class="toc-number">12.6.</span> <span class="toc-text">B.6 柔性电路板</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-7-串连阻抗"><span class="toc-number">12.7.</span> <span class="toc-text">B.7 串连阻抗</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-8-连接器"><span class="toc-number">12.8.</span> <span class="toc-text">B.8 连接器</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#附录C——-D-PHY的8b9b线编码（规范）"><span class="toc-number">13.</span> <span class="toc-text">附录C—— D-PHY的8b9b线编码（规范）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#C-1线编码特性"><span class="toc-number">13.1.</span> <span class="toc-text">C.1线编码特性</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#C-1-1-在协议中使能该功能"><span class="toc-number">13.1.1.</span> <span class="toc-text">C.1.1 在协议中使能该功能</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#C-1-2-在PHY中使能该功能"><span class="toc-number">13.1.2.</span> <span class="toc-text">C.1.2 在PHY中使能该功能</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#C-2-编码方案"><span class="toc-number">13.2.</span> <span class="toc-text">C.2 编码方案</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#C-2-1-8b9b-编码属性"><span class="toc-number">13.2.1.</span> <span class="toc-text">C.2.1 8b9b 编码属性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#C-2-2-数据码：基本的编码指令"><span class="toc-number">13.2.2.</span> <span class="toc-text">C.2.2 数据码：基本的编码指令</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#C-2-3-命令码：unique-例外码"><span class="toc-number">13.2.3.</span> <span class="toc-text">C.2.3 命令码：unique 例外码</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#C-2-4-控制码：正则例外码"><span class="toc-number">13.2.4.</span> <span class="toc-text">C.2.4 控制码：正则例外码</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#C-3-D-PHY操作"><span class="toc-number">13.3.</span> <span class="toc-text">C.3 D-PHY操作</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#C-3-1-载荷：数据与控制"><span class="toc-number">13.3.1.</span> <span class="toc-text">C.3.1 载荷：数据与控制</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#C-3-2-高速传输细节"><span class="toc-number">13.3.2.</span> <span class="toc-text">C.3.2 高速传输细节</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#C-3-3-低功耗传输细节"><span class="toc-number">13.3.3.</span> <span class="toc-text">C.3.3 低功耗传输细节</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#C-4-错误信息"><span class="toc-number">13.4.</span> <span class="toc-text">C.4 错误信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#C-5-PPI扩展"><span class="toc-number">13.5.</span> <span class="toc-text">C.5 PPI扩展</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#C-6-完整的编码指令集"><span class="toc-number">13.6.</span> <span class="toc-text">C.6 完整的编码指令集</span></a></li></ol></li></ol>
+</div>
+<input type="button" id="tocButton" value="隐藏目录"  title="点击按钮隐藏或者显示文章目录">
+
+<script src="https://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js"></script>
+<script>
+    var valueHide = "隐藏目录";
+    var valueShow = "显示目录";
+
+    if ($(".left-col").is(":hidden")) {
+        $("#tocButton").attr("value", valueShow);
+    }
+    $("#tocButton").click(function() {
+        if ($("#toc").is(":hidden")) {
+            $("#tocButton").attr("value", valueHide);
+            $("#toc").slideDown(320);
+        }
+        else {
+            $("#tocButton").attr("value", valueShow);
+            $("#toc").slideUp(350);
+        }
+    })
+    if ($(".toc").length < 1) {
+        $("#toc, #tocButton").hide();
+    }
+</script>
+
+
+
+
+
+<div class="bdsharebuttonbox">
+	<a href="#" class="fx fa-weibo bds_tsina" data-cmd="tsina" title="分享到新浪微博"></a>
+	<a href="#" class="fx fa-weixin bds_weixin" data-cmd="weixin" title="分享到微信"></a>
+	<a href="#" class="fx fa-qq bds_sqq" data-cmd="sqq" title="分享到QQ好友"></a>
+	<a href="#" class="fx fa-facebook-official bds_fbook" data-cmd="fbook" title="分享到Facebook"></a>
+	<a href="#" class="fx fa-twitter bds_twi" data-cmd="twi" title="分享到Twitter"></a>
+	<a href="#" class="fx fa-linkedin bds_linkedin" data-cmd="linkedin" title="分享到linkedin"></a>
+	<a href="#" class="fx fa-files-o bds_copy" data-cmd="copy" title="分享到复制网址"></a>
+</div>
+<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"2","bdSize":"24"},"share":{}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+
+
+
+
+    
+      <div class="duoshuo" id="comments">
+    <!-- 多说评论框 start -->
+    <div class="ds-thread" data-thread-key="2015/08/18/fpga-e8-a7-a3-e7-a0-81mipi-csi-ef-bc-88-e4-b8-80-ef-bc-89-d-phy-e7-90-86-e8-a7-a3/" data-title="FPGA解码MIPI CSI（一）——D-PHY理解" data-url="http://hex55.com/2015/08/18/fpga-e8-a7-a3-e7-a0-81mipi-csi-ef-bc-88-e4-b8-80-ef-bc-89-d-phy-e7-90-86-e8-a7-a3/"></div>
+    <!-- 多说评论框 end -->
+    <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+    <script type="text/javascript">
+    var duoshuoQuery = {short_name:"hex55"};
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = '/js/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0] 
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+    </script>
+    <!-- 多说公共JS代码 end -->
+</div>
+
+    
+
+
+
+    <div class="scroll" id="post-nav-button">
+        
+            <a href="/2015/08/20/sep4020-nandflash-e5-90-af-e5-8a-a8-e8-af-a6-e8-a7-a3-ef-bc-8c-e4-b8-8d-e5-90-8c-e9-98-b6-e6-ae-b5-e5-ad-98-e5-82-a8-e5-99-a8-e6-98-a0-e5-b0-84-e7-a4-ba-e6-84-8f-e5-9b-be/" title="上一篇: SEP4020 NandFlash启动详解，不同阶段存储器映射示意图">
+                <i class="fa fa-angle-left"></i>
+            </a>
+        
+        <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
+        
+            <a href="/2015/08/17/e5-ae-8c-e5-85-a8-e4-bf-ae-e5-a4-8dwin7-e5-bc-95-e5-af-bc/" title="下一篇: 完全修复WIN7引导">
+                <i class="fa fa-angle-right"></i>
+            </a>
+        
+    </div>
+    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2016/07/29/git-push到github提速解决办法/">git push到github提速解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/09/e8-a7-a3-e5-86-b3python-e6-89-93-e5-8c-85-no-module-named-xxx/">解决python 打包 No module named 'XXX'</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/08/cc-e5-86-85-e5-b5-8cpython-e6-89-93-e5-8c-85-e5-8f-91-e5-b8-83/">c/c++内嵌python打包发布</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/06/e8-a7-a3-e5-86-b3failed-to-load-platform-plugin-windows/">解决failed-to-load-platform-plugin-windows</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/07/04/e8-a7-a3-e5-86-b3fatal-python-error-py-initialize-cant-initialize-sys-standard-streams/">解决Fatal Python error: Py_Initialize: can't initialize sys standard streams</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/04/01/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa-e5-89-8d-e7-ab-af-e7-94-b5-e8-b7-af/">逻辑分析仪前端电路</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/03/14/e8-8f-8a-e8-8a-b1-e5-85-ac-e5-8f-b8-e9-9d-a2-e8-af-95-e8-ae-b0-e5-bd-95/">菊花公司面试记录</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/02/24/fpga-e4-b8-8e-cpu-e6-95-b0-e6-8d-ae-e4-ba-a4-e4-ba-92-e7-9a-84-e6-bc-ab-e7-94-bb-e5-b9-bf-e5-91-8a/">FPGA 与 CPU 数据交互的漫画广告</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/02/23/altium-designer-adc-e5-a4-9a-e9-80-9a-e9-81-93-e8-ae-be-e8-ae-a1/">Altium designer  ADC多通道设计</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/02/22/altium-designer-e5-b0-86pcb-e4-b8-9d-e5-8d-b0-e6-a0-87-e5-8f-b7-e5-8f-8d-e6-a0-87-e8-87-b3-e5-8e-9f-e7-90-86-e5-9b-be/">Altium Designer 将PCB丝印标号反标至原理图</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/25/pid-e5-88-9d-e5-ad-a6-e8-80-85-e6-8c-87-e5-8d-97/">PID初学者指南</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/18/e8-bf-90-e6-94-be-e5-a4-8d-e4-b9-a0-e7-ac-94-e8-ae-b0/">运放复习笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/12/qmodbus-e5-9c-a8visual-studio-e4-b8-ad-e7-9a-84-e7-bc-96-e8-af-91-e3-80-82/">qmodbus在visual studio中的编译。</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/10/e8-b6-85-e9-ab-98-e9-80-9f-e9-ab-98-e7-b2-be-e5-ba-a6-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aa-e7-ac-ac-e4-b8-89-e7-89-88/">超高速高精度红外测径仪第三版</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/08/e5-a6-82-e4-bd-95-e8-af-bb-e6-87-82git-e7-9a-84diff-e4-bf-a1-e6-81-af/">如何读懂GIT的DIFF信息</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/06/freemodbus-e6-ba-90-e7-a0-81-e5-88-86-e6-9e-90-e8-af-a6-e8-a7-a3/">freemodbus源码分析详解</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/05/freemodbus-rtuascii-e5-ae-98-e6-96-b9-e7-a7-bb-e6-a4-8d-e6-96-87-e6-a1-a3/">freemodbus RTU/ASCII 官方移植文档</a></li><li class="post-list-item"><a class="post-list-link" href="/2016/01/02/chipscope-e8-bf-9e-e6-8e-a5platform-cable-usb-jtag-e5-a4-b1-e8-b4-a5-e5-8e-9f-e5-9b-a0-e5-8f-8a-e8-a7-a3-e5-86-b3-e5-8a-9e-e6-b3-95/">chipscope 连接platform cable usb JTAG失败原因及解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/24/altium-designer-e8-87-aa-e5-8a-a8-e6-b7-bb-e5-8a-a0-e6-88-90-e7-89-87-e7-9a-84-e6-8b-bc-e6-8e-a5-e5-ad-94-ef-bc-88-e7-bc-9d-e5-90-88-e5-ad-94-ef-bc-89/">altium-designer自动添加成片的拼接孔（缝合孔）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/22/e9-ab-98-e9-80-9f-e9-ab-98-e7-b2-be-e5-ba-a6-e6-b5-8b-e5-be-84-e4-bb-aa-e4-b8-bb-e6-9d-bf-e7-ac-ac-e4-ba-8c-e7-89-88-e5-ae-8c-e5-b7-a5/">高速高精度测径仪主板第二版完工</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/22/altium-designer-e8-87-aa-e5-8a-a8-e6-b7-bb-e5-8a-a0-e5-b1-8f-e8-94-bd-e5-ad-94-ef-bc-88-e5-8c-85-e5-9c-b0-e5-ad-94-ef-bc-89/">altium-designer-自动添加屏蔽孔（包地孔）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/12/07/fpga-e6-9e-b6-e6-9e-84-e7-a4-ba-e4-be-8b-ef-bc-9aaes-e5-8a-a0-e5-af-86/">FPGA架构示例：AES加密</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/11/13/lantern-tor-browser-e9-9a-90-e8-b8-aa-e6-9c-80-e4-bd-b3-e6-8b-8d-e6-a1-a3/">Lantern && Tor Browser 隐踪最佳拍档</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/10/26/e7-94-a8-e4-ba-8e-e9-80-9a-e8-ae-af-e6-95-b0-e6-8d-ae-e7-bc-93-e5-ad-98-e7-9a-84-e9-ab-98-e6-95-88-e8-bd-af-e4-bb-b6fifo-e5-ae-9e-e7-8e-b0/">用于通讯数据缓存的高效软件FIFO实现</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/10/24/e9-ab-98-e9-80-9f-e9-ab-98-e7-b2-be-e5-ba-a6-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aa/">高速高精度红外测径仪</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/10/05/fpga-e6-9e-b6-e6-9e-84-e7-9a-84-e5-8a-9f-e8-80-97-e4-bc-98-e5-8c-96-ef-bc-883-ef-bc-89/">FPGA架构的功耗优化（3）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/10/04/fpga-e6-9e-b6-e6-9e-84-e7-9a-84-e5-8a-9f-e8-80-97-e4-bc-98-e5-8c-96-ef-bc-882-ef-bc-89/">FPGA架构的功耗优化（2）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/30/fpga-e6-9e-b6-e6-9e-84-e7-9a-84-e5-8a-9f-e8-80-97-e4-bc-98-e5-8c-96-ef-bc-881-ef-bc-89/">FPGA架构的功耗优化（1）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/25/e5-a6-82-e4-bd-95-e8-a7-a3-e5-86-b3gcc-e6-88-96mdk-e6-88-96iar-e5-bc-80-e5-90-af-o3-ef-bc-88-e6-9c-80-e9-ab-98-e7-ba-a7-e5-88-ab-ef-bc-89-e4-bc-98-e5-8c-96-e5-90-8e-e7-a8-8b-e5-ba-8f-e4-b8-8d/">如何解决GCC或MDK或IAR开启-O3（最高级别）优化后程序不能正常运行的问题?</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/19/e7-ba-bf-e9-98-b5ccd-e4-b8-93-e7-94-a8ad9945-e9-85-8d-e7-bd-ae-e7-a8-8b-e5-ba-8f-e6-ba-90-e7-a0-81-ef-bc-88-e5-b7-b2-e9-aa-8c-e8-af-81-e9-80-9a-e8-bf-87-ef-bc-89/">线阵CCD专用AD9945 配置程序源码（已验证通过）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/15/e5-b0-86newlib-e7-9a-84printf-e9-87-8d-e5-ae-9a-e5-90-91-e5-88-b0tft-lcd-e6-98-be-e7-a4-ba/">将newlib的printf重定向到TFT LCD显示</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/10/e6-9d-a5-e7-82-b9-e5-86-b7-e7-9a-84-e7-94-b5-e5-ad-90-e7-9f-a5-e8-af-86/">来点冷的电子知识</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/10/e6-95-99-e5-b8-88-e8-8a-82-e5-bf-ab-e4-b9-90-ef-bc-81/">教师节快乐！</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/09/mcu-e9-80-9a-e7-94-a8-e6-8c-89-e9-94-ae-ef-bc-88-e5-90-ab-e8-a7-a6-e6-91-b8-ef-bc-89-e5-a4-84-e7-90-86-e6-a8-a1-e5-9d-97-ef-bc-8c-e6-94-af-e6-8c-81-e5-a7-94-e6-89-98/">mcu通用按键（含触摸）处理模块，支持委托</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/07/e7-ba-bf-e9-98-b5ccd-e6-95-b0-e6-8d-ae-e9-87-87-e9-9b-86adcad9945-e5-88-9d-e5-a7-8b-e9-85-8d-e7-bd-ae-e5-8c-96-e6-ba-90-e7-a0-81/">线阵CCD数据采集ADC(AD9945)初始配置化源码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/06/e6-80-8e-e4-b9-88-e8-a7-a3-e5-86-b3mdk-e6-af-8f-e6-ac-a1-e9-83-bd-e5-85-a8-e7-bc-96-e8-af-91-e7-9a-84-e5-8a-9e-e6-b3-95/">怎么解决MDK 每次都全编译的办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/09/02/stm32-jtag-e5-8f-a3-e5-a6-82-e4-bd-95-e5-a4-8d-e7-94-a8-ef-bc-9f/">STM32 JTAG 口如何复用？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/31/modelsim-e7-bc-96-e8-af-91-microsemiactel-fpga-e4-bb-bf-e7-9c-9f-e5-ba-93/">modelsim 编译 microsemi(actel) FPGA 仿真库</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/30/cpldfpga-e5-81-9a-e7-9a-84tft-e6-8e-a7-e5-88-b6-e5-99-a8verilog-e5-bc-80-e6-ba-90-e4-bb-a3-e7-a0-81/">CPLD/FPGA做的TFT控制器verilog开源代码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/29/e9-ab-98-e9-80-9f-e7-ba-bf-e9-98-b5ccd-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aa-e9-80-9a-e4-bf-a1-e8-b0-83-e8-af-95-e9-80-9a-e8-bf-87/">高速线阵CCD红外测径仪通信调试通过</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/29/libero-soc-e7-9a-84failed-to-execute-synplify-pro-exe-e9-94-99-e8-af-af-e6-80-8e-e4-b9-88-e8-a7-a3-e5-86-b3-ef-bc-9f/">libero soc的Failed to execute: 'synplify_pro.exe'错误怎么解决？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/28/e8-a7-a3-e5-86-b3-keil-mdk-error-l6235e-more-than-one-section-matches-selector/">解决 keil MDK error: L6235E: More than one section matches selector - cannot all be FIRST/LAST.</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/26/libero-soc-e6-97-a0-e6-b3-95-e5-90-af-e5-8a-a8-e6-80-8e-e6-a0-b7-e8-a7-a3-e5-86-b3-ef-bc-9f/">libero soc无法启动怎样解决？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/25/stm32-swdiojtag-e8-b0-83-e8-af-95-e5-8f-a3-e8-a2-ab-e7-a6-81-e7-94-a8-e5-90-8e-e6-80-8e-e4-b9-88-e8-a7-a3-e9-99-a4-ef-bc-9f/">STM32 SWDIO/JTAG 调试口被禁用后怎么解除？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/24/e5-90-84-e5-8e-82-e5-ae-b6-fpga-e3-80-81cpld-e5-86-85-e9-83-a8-e7-bb-93-e6-9e-84-e5-88-86-e6-9e-90-e5-8f-8a-e7-bc-96-e7-a0-81-e6-b3-a8-e6-84-8f-e4-ba-8b-e9-a1-b9/">各厂家 FPGA、CPLD内部结构分析及编码注意事项</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/23/fpga-e4-b8-ad-e8-b5-84-e6-ba-90-e5-8d-a0-e7-94-a8-e7-8e-87-e4-b8-8a-e9-99-90-e8-ae-be-e4-b8-ba-e5-a4-9a-e5-b0-91-e5-90-88-e9-80-82-ef-bc-9f/">FPGA中资源占用率上限设为多少合适？</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/22/e5-8f-af-e7-94-a8-e4-ba-8e-e5-8d-95-e7-89-87-e6-9c-ba-e7-9a-84-e5-b5-8c-e5-85-a5-e5-bc-8f-e9-9d-9e-e9-80-92-e5-bd-92-e5-bf-ab-e9-80-9f-e6-8e-92-e5-ba-8f-e7-ae-97-e6-b3-95-e6-ba-90-e7-a0-81/">可用于单片机的嵌入式非递归快速排序算法源码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/21/e7-94-b5-e9-98-bb-e8-a7-a6-e6-91-b8-e5-b1-8f-e4-ba-94-e7-82-b9-e6-a0-a1-e5-87-86-e7-ae-97-e6-b3-95-e6-ba-90-e7-a0-81/">电阻触摸屏五点校准算法源码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/20/sep4020-nandflash-e5-90-af-e5-8a-a8-e8-af-a6-e8-a7-a3-ef-bc-8c-e4-b8-8d-e5-90-8c-e9-98-b6-e6-ae-b5-e5-ad-98-e5-82-a8-e5-99-a8-e6-98-a0-e5-b0-84-e7-a4-ba-e6-84-8f-e5-9b-be/">SEP4020 NandFlash启动详解，不同阶段存储器映射示意图</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/18/fpga-e8-a7-a3-e7-a0-81mipi-csi-ef-bc-88-e4-b8-80-ef-bc-89-d-phy-e7-90-86-e8-a7-a3/">FPGA解码MIPI CSI（一）——D-PHY理解</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/17/e5-ae-8c-e5-85-a8-e4-bf-ae-e5-a4-8dwin7-e5-bc-95-e5-af-bc/">完全修复WIN7引导</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/17/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-9d-a2-e7-a7-af-e4-bc-98-e5-8c-96/">FPGA、CPLD 架构的面积优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/16/warning-169177-1-pins-must-meet-altera-requirements-for-3-3-3-0-and-2-5-v-interfaces-for-more-information-refer-to-an-447-interfacing-cyclone-iv-e-devices-with-3-33-02-5-v-lvttllvcmos-io/">Warning (169177): 1 pins must meet Altera requirements for 3.3-, 3.0-, and 2.5-V interfaces. For more information, refer to AN 447: Interfacing Cyclone IV E Devices with 3.3\/3.0\/2.5-V LVTTL\/LVCMOS I\/O Systems.</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/16/win7-e5-85-b1-e4-ba-ab-e5-af-86-e7-a0-81-e9-94-99-e8-af-af-e8-a7-a3-e5-86-b3-e5-8a-9e-e6-b3-95/">WIN7 共享 密码错误解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/15/e5-b8-a6-e9-a9-b1-e5-8a-a8-e6-8e-a7-e5-88-b6-e5-99-a8ic-e7-9a-84tft-e6-98-be-e7-a4-ba-e5-b1-8f-e4-bd-bf-e7-94-a8-e8-af-b4-e6-98-8e/">带驱动控制器IC的TFT显示屏使用说明</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/15/e9-ab-98-e9-80-9f-e7-ba-bf-e9-98-b5ccd-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aapcb-e6-9d-bf-e5-9b-9e-e6-9d-a5-e5-95-a6-ef-bc-81/">高速线阵CCD红外测径仪PCB板回来啦！</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/14/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aausb-e4-bc-a0-e8-be-93-e5-ae-8c-e6-88-90/">逻辑分析仪USB传输完成</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/14/e5-87-a0-e7-a7-8d-e7-94-b5-e6-9c-ba-e6-8e-a7-e5-88-b6-e6-96-b9-e5-bc-8f-e7-9a-84-e5-bc-82-e5-90-8c/">几种电机控制方式的异同</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/13/tp-e7-8e-bb-e7-92-83-e8-a7-a6-e6-8e-a7-e6-8a-80-e6-9c-af-e5-8f-8a-e5-bc-80-e5-8f-91-e6-a1-88-e4-be-8b-e5-88-86-e4-ba-ab/">TP玻璃触控技术及开发案例分享</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/12/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa-e4-b8-8a-e4-b8-8b-e4-bd-8d-e6-9c-ba-e9-80-9a-e8-ae-af-e8-b0-83-e8-af-95-e6-88-90-e5-8a-9f/">逻辑分析仪上下位机通讯调试成功</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/11/e8-a7-a3-e5-86-b3-top-overlay-silk-primitive-on-board-region-without-silkscreen/">解决 Top Overlay Silk primitive on board region without silkscreen</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/10/e9-ab-98-e9-80-9f-e7-ba-bf-e9-98-b5ccd-e7-ba-a2-e5-a4-96-e6-b5-8b-e5-be-84-e4-bb-aapcb-e6-9c-80-e7-bb-88-e7-89-88/">高速线阵CCD红外测径仪PCB最终版</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/10/e4-b8-80-e7-a7-8d-e6-94-b9-e8-bf-9b-e5-9e-8b-e7-9a-84-e8-b6-85-e4-bd-8e-e6-88-90-e6-9c-ac-e5-92-8c-e5-bc-a6-e9-9f-b3-e8-9c-82-e9-b8-a3-e5-99-a8-e4-ba-a7-e7-94-9f-e7-94-b5-e8-b7-af/">一种改进型的超低成本和弦音蜂鸣器产生电路</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/09/e4-b8-80-e7-a7-8d-e4-bd-8e-e6-88-90-e6-9c-ac-e9-9f-b3-e6-95-88-e4-b8-b0-e5-af-8c-e7-9a-84-e5-92-8c-e5-bc-a6-e9-9f-b3-e8-9c-82-e9-b8-a3-e5-99-a8-e4-ba-a7-e7-94-9f-e7-94-b5-e8-b7-af-e5-8f-8a-e5-85-b6/">一种低成本音效丰富的和弦音蜂鸣器产生电路及其驱动代码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/07/e3-80-8a-e7-96-af-e7-8b-82-e7-9a-84-e6-8a-95-e8-b5-84-e8-b7-a8-e8-b6-8a-e5-a4-a7-e8-a5-bf-e6-b4-8b-e7-94-b5-e7-bc-86-e7-9a-84-e5-95-86-e4-b8-9a-e4-bc-a0-e5-a5-87-e3-80-8b-e8-af-bb/">《疯狂的投资——跨越大西洋电缆的商业传奇》读书笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/07/fpga-e3-80-81cpld-e6-9e-b6-e6-9e-84-e7-9a-84-e9-80-9f-e5-ba-a6-e4-bc-98-e5-8c-96/">FPGA、CPLD架构的速度优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/05/e9-ab-98-e9-80-9f-e7-ba-a2-e5-a4-96-e7-ba-bf-e9-98-b5ccd-e6-b5-8b-e5-be-84-e4-bb-aapcb-e5-ae-8c-e5-b7-a5/">高速红外线阵CCD测径仪PCB完工</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/05/e6-99-ba-e8-83-bd-e9-a9-ac-e6-a1-b6-e9-a1-b9-e7-9b-ae-e6-80-bb-e7-bb-93/">智能马桶项目总结</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/04/fpga-e6-93-8d-e4-bd-9c-e5-9b-9b-e7-ba-bf-e5-88-b6spi-flash-ef-bc-88quad-spi-flash-ef-bc-89-ef-bc-883-ef-bc-89/">FPGA操作四线制SPI FLASH（Quad SPI Flash） （3）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/02/e5-9f-ba-e4-ba-8efpgacpld-e7-9a-84tft-e6-98-be-e7-a4-ba-e6-8e-a7-e5-88-b6-e5-99-a8-e9-80-bb-e8-be-91-e4-bb-a3-e7-a0-81-e7-9a-84-e8-af-a6-e7-bb-86-e8-ae-be-e8-ae-a1-e8-af-b4-e6-98-8e-e4-b9-a6/">基于FPGA/CPLD + SDRAM 的TFT液晶控制器(lcd controller)逻辑代码的详细设计说明书</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/08/01/iap-ewarm-stl-e5-a0-86-e7-a9-ba-e9-97-b4-e4-b8-8d-e5-a4-9f-e8-a7-a3-e5-86-b3-e5-8a-9e-e6-b3-95/">IAP EWARM STL 堆栈空间不够解决办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/30/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa-e3-80-81quad-spi-flash-e8-bd-ac-e6-9d-bf-e5-87-ba-e7-82-89/">逻辑分析仪、QUAD SPI FLASH转板出炉</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/29/altium-designer-e5-9c-a8-e5-90-8c-e4-b8-80-e4-b8-aa-e5-b7-a5-e7-a8-8b-e4-b8-ad-e7-bb-98-e5-88-b6-e5-a4-9a-e5-9d-97pcb/">altium designer在同一个工程中绘制多块PCB</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/28/alitum-designer-e7-bb-99-e4-b8-80-e4-b8-aa-e5-85-83-e4-bb-b6-e6-b7-bb-e5-8a-a0-e5-a4-9a-e4-b8-aapart/">alitum designer给一个元件添加多个part</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/27/fpga-e6-93-8d-e4-bd-9c-e5-9b-9b-e7-ba-bf-e5-88-b6spi-flash-ef-bc-88quad-spi-flash-ef-bc-89-ef-bc-882-ef-bc-89/">FPGA操作四线制SPI FLASH（Quad SPI Flash） （2）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/26/fpga-e6-93-8d-e4-bd-9c-e5-9b-9b-e7-ba-bf-e5-88-b6spi-flash-ef-bc-88quad-spi-flash-ef-bc-89-ef-bc-881-ef-bc-89/">FPGA操作四线制SPI FLASH（Quad SPI Flash） （1）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/23/keil-mdk-e5-92-8c-iar-ewarm-ide-e4-b8-adstl-e5-ae-9e-e7-8e-b0-e7-9a-84-e6-af-94-e8-be-83/">KEIL MDK 和 IAR EWARM IDE中STL实现的比较</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/22/altclkctrl-e4-bd-bf-e7-94-a8-e6-b3-a8-e6-84-8f-e4-ba-8b-e9-a1-b9/">ALTCLKCTRL使用注意事项</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/21/e6-98-8e-e6-99-ba-e5-9c-b0-e5-a4-84-e7-90-86-e5-a4-8d-e4-bd-8d-ef-bc-9a-e8-80-83-e8-99-91-e5-b1-80-e9-83-a8-ef-bc-8c-e8-80-8c-e4-b8-8d-e6-98-af-e5-85-a8-e5-b1-80/">在FPGA中明智地处理复位：考虑局部，而不是全局</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/20/e9-ab-98-e9-80-9f-e7-ba-bf-e9-98-b5ccd-e5-a4-96-e5-be-84-e6-b5-8b-e9-87-8f-e4-bb-aa-e5-8e-9f-e7-90-86-e5-9b-be-e5-ae-8c-e5-b7-a5/">高速线阵CCD外径测量仪原理图完工</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/20/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa68013-to-fpga-e3-80-81quad-spi-flash-e8-bd-ac-e6-9d-bfpcb-e5-ae-8c-e5-b7-a5/">逻辑分析仪68013 to FPGA、QUAD SPI FLASH 转板PCB完工</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/20/sdram-cpld-tft-e9-a9-b1-e5-8a-a8-e5-99-a8-e7-9a-84pcb-e5-b8-83-e5-b1-80-e5-a4-b1-e8-af-af-e4-b8-8e-e7-bb-8f-e9-aa-8c/">SDRAM + CPLD TFT驱动器的PCB布局失误与经验</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/19/e9-87-8d-e6-b8-b8-e6-a1-82-e6-9e-97/">重游桂林</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/17/stm32-jtag-e8-a2-ab-e9-94-81-e4-bd-8f-ef-bc-8c-e8-a7-a3-e9-94-81-e5-8a-9e-e6-b3-95/">STM32 JTAG被锁住，解锁办法</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/16/wordpress-e6-a8-a1-e6-9d-bf-e4-bf-ae-e6-94-b9-e6-b3-a8-e6-84-8f-e4-ba-8b-e9-a1-b9/">wordpress 模板修改注意事项</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/15/e3-80-8a-e9-bb-91-e5-ae-a2-e4-b8-8e-e7-94-bb-e5-ae-b6-e3-80-8b-e8-af-bb-e4-b9-a6-e7-ac-94-e8-ae-b0/">《黑客与画家》读书笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/15/e6-99-ba-e8-83-bd-e5-ae-b6-e5-b1-85-e8-87-aa-e5-8a-a8-e8-b4-9f-e8-bd-bd-e6-b5-8b-e8-af-95-e3-80-81-e6-b8-a9-e5-9c-ba-e8-b0-83-e8-af-95-e9-80-9a-e7-94-a8-e5-b7-a5-e5-85-b72/">智能家居自动负载测试、温场调试通用工具(2)</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/15/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa68013-to-fpga-e3-80-81quad-spi-flash-e8-bd-ac-e6-9d-bf/">逻辑分析仪68013 to FPGA、QUAD SPI FLASH 转板</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/14/e6-99-ba-e8-83-bd-e5-ae-b6-e5-b1-85-e8-87-aa-e5-8a-a8-e8-b4-9f-e8-bd-bd-e6-b5-8b-e8-af-95-e3-80-81-e6-b8-a9-e5-9c-ba-e8-b0-83-e8-af-95-e9-80-9a-e7-94-a8-e5-b7-a5-e5-85-b7-ef-bc-881-ef-bc-89/">智能家居自动负载测试、温场调试通用工具（1）</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/02/e5-9c-a8altium-designer-e4-b8-ad-e5-bf-ab-e9-80-9f-e4-bd-9c-e5-88-b6-e5-8e-9f-e7-90-86-e5-9b-be-e5-b0-81-e8-a3-85/">在Altium Designer中快速作制原理图封装</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/02/quartus-e5-92-8c-modelsim-e4-b8-ad-e7-9a-84-e6-b3-a8-e6-84-8f-e4-ba-8b-e9-a1-b9/">quartus 和 modelsim中的注意事项</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/07/01/e6-97-b6-e5-ba-8f-e4-bc-98-e5-8c-96-e4-b9-8b-e7-89-a9-e7-90-86-e7-bb-bc-e5-90-88-e4-bc-98-e5-8c-96/">时序优化之物理综合优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/30/e5-85-b3-e4-ba-8e-e6-b5-81-e6-b0-b4-e7-ba-bf-e5-bb-b6-e6-97-b6-e5-85-ac-e5-bc-8f-e7-9a-84-e4-b8-aa-e4-ba-ba-e7-90-86-e8-a7-a3/">关于流水线延时公式的个人理解</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/29/e7-bd-91-e7-ab-99-e6-95-b0-e6-8d-ae-e6-89-93-e5-8c-85-e3-80-81-e5-8e-8b-e7-bc-a9-e5-a4-87-e4-bb-bd/">网站数据打包、压缩备份</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/28/e4-b8-80-e4-b8-aa-e7-ae-80-e5-8d-95-e7-9a-84-e4-bd-8e-e6-88-90-e6-9c-ac5v3-3v-e7-94-b5-e5-b9-b3-e5-8f-8c-e5-90-91-e8-bd-ac-e6-8d-a2-e7-94-b5-e8-b7-af/">一个简单的低成本5V~3.3V电平双向转换电路</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/e6-97-a0-e5-90-8d-e7-9a-84-e4-bb-a3-e7-a0-81/">无名的代码</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/e8-87-b4-e7-83-9f-e9-ac-bc-e4-bb-ac/">致烟鬼们</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/wordpress-e9-98-bf-e9-87-8c-e4-ba-91ecs-e4-b8-bb-e6-9c-ba-e5-ae-89-e8-a3-85-e6-ad-a5-e9-aa-a4/">wordpress 阿里云ECS主机安装步骤</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/e8-a7-a3-e5-86-b3mysql-e9-87-8d-e5-90-af-e9-94-99-e8-af-af-e6-8f-90-e7-a4-ba-the-server-quit-without-updating-pid-file/">解决MYSQL重启错误提示 The server quit without updating PID file(…)</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/25/e6-97-b6-e9-92-9f-e6-8a-96-e5-8a-a8-ef-bc-88clock-jitter-ef-bc-89-e5-92-8c-e6-97-b6-e9-92-9f-e5-81-8f-e7-a7-bb-ef-bc-88clock-skew-ef-bc-89-e7-9a-84-e5-ae-9a-e4-b9-89-ef-bc-8c-e5-8f-8a-e5-85-b6/">时钟抖动（*clock jitter*）和时钟偏移（*clock skew*）的定义，及其对时序的影响</a></li><li class="post-list-item"><a class="post-list-link" href="/2015/06/24/e5-9c-a8modesim-e4-b8-ad-e4-bb-a5-e5-8f-82-e6-95-b0-e5-90-8d-e6-98-be-e7-a4-ba-e7-8a-b6-e6-80-81-e6-9c-ba-e5-8f-98-e9-87-8f-e7-9a-84-e4-b8-a4-e7-a7-8d-e6-96-b9-e6-b3-95-e5-8f-8a-e6-af-94-e8-be-83/">在modesim中显示状态机变量参数名的两种方法及比较</a></li></ul>
+    <script src="https://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js"></script>
+    <script>
+        $(".post-list").addClass("toc-article");
+        $(".post-list-item a").attr("target","_blank");
+        $("#post-nav-button > a:nth-child(2)").click(function() {
+            $(".fa-bars, .fa-times").toggle();
+            $(".post-list").toggle(300);
+            if ($(".toc").length > 0) {
+                $("#toc, #tocButton").toggle(200, function() {
+                    if ($(".switch-area").is(":visible")) {
+                        $("#tocButton").attr("value", valueHide);
+                        }
+                    })
+            }
+            else {
+            }
+        })
+    </script>
+
+
+
+    <script>
+        
+    </script>
+</div>
+      <footer id="footer">
+    <div class="outer">
+        <div id="footer-info">
+            <div class="footer-left">
+                &copy; 2016 shawge
+            </div>
+            <div class="footer-right">
+                <a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/luuman/hexo-theme-spfk" target="_blank">spfk</a> by luuman
+            </div>
+        </div>
+        
+    </div>
+</footer>
+
+    </div>
+    <script src="https://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js"></script>
+<script src="/js/main.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var backgroundnum = 24;
+            var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
+            $("#mobile-nav").css({"background-image": backgroundimg,"background-size": "cover","background-position": "center"});
+            $(".left-col").css({"background-image": backgroundimg,"background-size": "cover","background-position": "center"});
+        })
+    </script>
+
+
+
+
+
+<div class="scroll" id="scroll">
+    <a href="#"><i class="fa fa-arrow-up"></i></a>
+    <a href="#comments"><i class="fa fa-comments-o"></i></a>
+    <a href="#footer"><i class="fa fa-arrow-down"></i></a>
+</div>
+<script>
+    $(document).ready(function() {
+        if ($("#comments").length < 1) {
+            $("#scroll > a:nth-child(2)").hide();
+        };
+    })
+</script>
+
+<script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js">
+</script>
+
+  <script language="javascript">
+    $(function() {
+        $("a[title]").each(function() {
+            var a = $(this);
+            var title = a.attr('title');
+            if (title == undefined || title == "") return;
+            a.data('title', title).removeAttr('title').hover(
+
+            function() {
+                var offset = a.offset();
+                $("<div id=\"anchortitlecontainer\"></div>").appendTo($("body")).html(title).css({
+                    top: offset.top - a.outerHeight() - 15,
+                    left: offset.left + a.outerWidth()/2 + 1
+                }).fadeIn(function() {
+                    var pop = $(this);
+                    setTimeout(function() {
+                        pop.remove();
+                    }, pop.text().length * 800);
+                });
+            }, function() {
+                $("#anchortitlecontainer").remove();
+            });
+        });
+    });
+</script>
+
+
+  </div>
+</body>
+</html>
