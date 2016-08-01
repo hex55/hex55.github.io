@@ -275,14 +275,16 @@ Q_IMPORT_PLUGIN (QWindowsIntegrationPlugin);
     <link href="http://hex55.com/2016/04/01/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa-e5-89-8d-e7-ab-af-e7-94-b5-e8-b7-af/"/>
     <id>http://hex55.com/2016/04/01/e9-80-bb-e8-be-91-e5-88-86-e6-9e-90-e4-bb-aa-e5-89-8d-e7-ab-af-e7-94-b5-e8-b7-af/</id>
     <published>2016-04-01T09:24:18.000Z</published>
-    <updated>2016-07-19T00:29:50.000Z</updated>
+    <updated>2016-08-01T09:59:46.617Z</updated>
     
-    <content type="html"><![CDATA[<p><a href="/uploads/2016/03/IMG_20160331_194144.jpg"><img src="/uploads/2016/03/IMG_20160331_194144.jpg" alt="IMG_20160331_194144"></a></p>
+    <content type="html"><![CDATA[<p>拆了个逻辑分析仪，把原理图反出来一看，发现市面上百分之九十的逻辑分析仪所谓的设置触发电平功能都是玩具，当看到某宝上有卖家宣称用了高速比较器来做这个功能，而价格296RMB时买了一个回来，发现一样是吹NB，根本没有什么高速比较器的价格，高速比较器本身就不便宜，而且逻辑分析仪往往是16或者32通道的，两三百块钱连比较器都买不到！</p>
+<a id="more"></a>
+<p><a href="/uploads/2016/03/IMG_20160331_194144.jpg"><img src="/uploads/2016/03/IMG_20160331_194144.jpg" alt="IMG_20160331_194144"></a></p>
 ]]></content>
     
     <summary type="html">
     
-      &lt;p&gt;&lt;a href=&quot;/uploads/2016/03/IMG_20160331_194144.jpg&quot;&gt;&lt;img src=&quot;/uploads/2016/03/IMG_20160331_194144.jpg&quot; alt=&quot;IMG_20160331_194144&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+      &lt;p&gt;拆了个逻辑分析仪，把原理图反出来一看，发现市面上百分之九十的逻辑分析仪所谓的设置触发电平功能都是玩具，当看到某宝上有卖家宣称用了高速比较器来做这个功能，而价格296RMB时买了一个回来，发现一样是吹NB，根本没有什么高速比较器的价格，高速比较器本身就不便宜，而且逻辑分析仪往往是16或者32通道的，两三百块钱连比较器都买不到！&lt;/p&gt;
     
     </summary>
     
