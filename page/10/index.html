@@ -642,73 +642,6 @@ a表示添加文件到压缩包， -r表示递归处理文件夹，默认为7z�
 
 
   
-    <article id="post-e6-97-b6-e9-92-9f-e6-8a-96-e5-8a-a8-ef-bc-88clock-jitter-ef-bc-89-e5-92-8c-e6-97-b6-e9-92-9f-e5-81-8f-e7-a7-bb-ef-bc-88clock-skew-ef-bc-89-e7-9a-84-e5-ae-9a-e4-b9-89-ef-bc-8c-e5-8f-8a-e5-85-b6" class="article article-type-post" itemscope itemprop="blogPost">
-  
-    <div class="article-meta">
-      <a href="/2015/06/25/e6-97-b6-e9-92-9f-e6-8a-96-e5-8a-a8-ef-bc-88clock-jitter-ef-bc-89-e5-92-8c-e6-97-b6-e9-92-9f-e5-81-8f-e7-a7-bb-ef-bc-88clock-skew-ef-bc-89-e7-9a-84-e5-ae-9a-e4-b9-89-ef-bc-8c-e5-8f-8a-e5-85-b6/" class="article-date">
-      <time datetime="2015-06-25T08:38:04.000Z" itemprop="datePublished">2015-06-25</time>
-</a>
-    </div>
-  
-  <div class="article-inner">
-    
-      <input type="hidden" class="isFancy" />
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/06/25/e6-97-b6-e9-92-9f-e6-8a-96-e5-8a-a8-ef-bc-88clock-jitter-ef-bc-89-e5-92-8c-e6-97-b6-e9-92-9f-e5-81-8f-e7-a7-bb-ef-bc-88clock-skew-ef-bc-89-e7-9a-84-e5-ae-9a-e4-b9-89-ef-bc-8c-e5-8f-8a-e5-85-b6/">时钟抖动（*clock jitter*）和时钟偏移（*clock skew*）的定义，及其对时序的影响</a>
-    </h1>
-  
-
-      </header>
-      
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-          
-        <hr>
-<p>参考链接：<br><a href="http://en.wikipedia.org/wiki/Clock_skew#Confusion_between_clock_skew_and_clock_jitter" target="_blank" rel="external">http://en.wikipedia.org/wiki/Clock_skew#Confusion_between_clock_skew_and_clock_jitter</a><br><a href="http://www.eetop.cn/blog/html/14/56214-26659.html" target="_blank" rel="external">http://www.eetop.cn/blog/html/14/56214-26659.html</a><br><a href="http://electronicsgurukulam.blogspot.hk/2012/11/clock-skew-and-jitter-in-digital.html" target="_blank" rel="external">http://electronicsgurukulam.blogspot.hk/2012/11/clock-skew-and-jitter-in-digital.html</a><br><a href="http://www.wildpackets.com/resources/compendium/wireless_lan/signal_characteristics" target="_blank" rel="external">http://www.wildpackets.com/resources/compendium/wireless_lan/signal_characteristics</a></p>
-<h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><ul>
-<li><strong>时钟抖动（<em>clock jitter</em>）</strong>——是指多个时钟周期之间存在的差值（如上图），这个误差是在时钟发生器内部产生的，和晶振或者PLL内部电路有关，布线对其没有影响。除此之外，还有一种由于周期内信号的占空比发生变化而引起的抖 动，称之为半周期抖动。总的来说，jitter可以认为在时钟信号本身在传输过程中的一些偶然和不定的变化之总和。<br><img src="/uploads/2015/06/clk_jitter.bmp" alt=""></li>
-<li><strong>时钟偏移（<em>clock skew</em>）</strong>——是指同样的时钟产生的多个子时钟信号之间的延时差异(如上图)。它表现的形式是多种多样的，既包含了时钟驱动器的多个输出之间的偏移，也包含了由于PCB走线误差造成的接收端和驱动端时钟信号之间的偏移。<br>信号完整性对时序的影响，比如串扰会影响微带线传播延迟；反射会造成数据信号在逻辑门限附近波动，从而影响最大/最 小飞行时间；时钟走线的干扰会造成一定的时钟偏移。有些误差或不确定因素是仿真中无法预见的，设计者只有通过周密的思考和实际经验的积累来逐步提高系统设计的水平。<br><img src="/uploads/2015/06/clk_skew.bmp" alt=""><blockquote>
-<p>Clock Skew: The spatial variation in arrival time of a clock transition on an integrated circuit;<br>Clock jitter: The temporal vatiation of the clock period at a given point on the chip;<br><strong>简言之，skew通常是时钟相位上的不确定，而jitter是指时钟频率上的不确定（uncertainty)。由于时钟源到达不同寄存器所经历路径的驱动和负载的不同，时钟边沿的位置有所差异，因此就带来了<br>skew。而由于晶振本身稳定性，电源以及温度变化等原因造成了时钟频率的变化，就是jitter。</strong></p>
-</blockquote>
-</li>
-</ul>
-<h3 id="对时序的影响"><a href="#对时序的影响" class="headerlink" title="对时序的影响"></a>对时序的影响</h3><p>skew和jitter对电路的影响可以用一个简单的时间模型来解释。假设下图中t(c-q)代表寄存器的最大输出延迟，<br>t(c-q, cd)表示最大输出延时；t(su)和t(hold)分别代表寄存器的setup, hold time（暂不考虑p.v.t）差异；t(logic)<br>和t(logic, cd)分别表示最大的组合逻辑传输延迟和最小组合逻辑传输延迟；<br><img src="/uploads/2015/06/clk_skew_jitter_timing.bmp" alt=""><br>在不考虑skew和jitter的情况下，及t(clk1)和t(clk2)同频同相时，时钟周期T和t(hold)需要满足<br>                  T &gt; t(c-q) + t(logic) + t(su)<br>                  t(hold) &lt; t(c-q, cd) + t(logic, cd)<br>这样才能保证电路的功能正常，且避免竞争的发生。如果考虑CLK2比CLK1晚t1的相位，及skew=t1。则<br>                  t(hold) &lt; t(c-q, cd) + t(logic, cd) - t1<br>这意味着电路由更大的倾向发生hold time violation；如果考虑CLK1比CLK2晚t2的相位，及skew=-t2，则<br>                  T &gt; t(c-q) + t(logic) + t(su) + t2<br>这意味着电路的性能下降了，但由于R2的hold time始终满足，所以不会有竞争的麻烦存在。clock jitter始终是对性能造成负面的影响，一般设计中都需要专门留取10%左右的margin来保证。<br>                  clock uncertainty = clock jitter + clock skew<br>jitter 是 由时钟源产生的抖动。skew是时钟树不平衡引起的到达两个寄存器的延迟差。在cts之后,skew由工具算出，因此sta的时候clock uncertainty 可以设一个比较小的值。另外做hold check的时候因为检查的是同一个时钟沿，因此没有jitter只有skew.</p>
-
-      
-    </div>
-    
-    <div class="article-info article-info-index">
-      
-      
-    <div class="article-category tagcloud">
-    <a class="article-category-link" href="/categories/FPGA/">FPGA</a>
-    </div>
-
-
-      
-      
-      <div class="clearfix"></div>
-    </div>
-    
-  </div>
-  
-</article>
-
-
-
-
-
-
-
-
-
-  
     <article id="post-e8-87-b4-e7-83-9f-e9-ac-bc-e4-bb-ac" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
@@ -754,6 +687,79 @@ a表示添加文件到压缩包， -r表示递归处理文件夹，默认为7z�
       
     <div class="article-category tagcloud">
     <a class="article-category-link" href="/categories/闲言碎语/">闲言碎语</a>
+    </div>
+
+
+      
+      
+      <div class="clearfix"></div>
+    </div>
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+
+
+  
+    <article id="post-e8-a7-a3-e5-86-b3mysql-e9-87-8d-e5-90-af-e9-94-99-e8-af-af-e6-8f-90-e7-a4-ba-the-server-quit-without-updating-pid-file" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2015/06/25/e8-a7-a3-e5-86-b3mysql-e9-87-8d-e5-90-af-e9-94-99-e8-af-af-e6-8f-90-e7-a4-ba-the-server-quit-without-updating-pid-file/" class="article-date">
+      <time datetime="2015-06-25T08:38:04.000Z" itemprop="datePublished">2015-06-25</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/06/25/e8-a7-a3-e5-86-b3mysql-e9-87-8d-e5-90-af-e9-94-99-e8-af-af-e6-8f-90-e7-a4-ba-the-server-quit-without-updating-pid-file/">解决MYSQL重启错误提示 The server quit without updating PID file(…)</a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+          
+        <hr>
+<p><a href="/uploads/2015/06/lnmp.png"><img src="/uploads/2015/06/lnmp-300x200.png" alt="lnmp"></a></p>
+<ul>
+<li>首先改etc目录下my.cnf的max_connections为100。（执行这一步行已能重启，但仍有错误“ERROR! MySQL server PID file could not be found!”）</li>
+<li>输入chmod -R 755 /usr/local/mysql/data（执行这一步后没有任何错误提示）</li>
+<li>仍然不行，则试参考以下手段：</li>
+</ul>
+<blockquote>
+<p>1.可能是/usr/local/mysql/data/rekfan.pid文件没有写的权限<br>  解决方法 ：给予权限，执行 “chown -R mysql:mysql /var/data” “chmod -R 755 /usr/local/mysql/data”  然后重新启动mysqld！</p>
+<p>  2.可能进程里已经存在mysql进程<br>  解决方法：用命令“ps -ef|grep mysqld”查看是否有mysqld进程，如果有使用“kill -9  进程号”杀死，然后重新启动mysqld！</p>
+<p>  3.可能是第二次在机器上安装mysql，有残余数据影响了服务的启动。<br>  解决方法：去mysql的数据目录/data看看，如果存在mysql-bin.index，就赶快把它删除掉吧，它就是罪魁祸首了。本人就是使用第三条方法解决的 ！</p>
+<p>  4.mysql在启动时没有指定配置文件时会使用etc目录下my.cnf配置文件，请打开这个文件查看在[mysqld]节下有没有指定数据目录(datadir)。<br>  解决方法：请在[mysqld]下设置这一行：datadir = /usr/local/mysql/data</p>
+<p>  5.skip-federated字段问题<br>  解决方法：检查一下etc目录下my.cnf文件中有没有没被注释掉的skip-federated字段，如果有就立即注释掉吧。</p>
+<p>  6.错误日志目录不存在<br>  解决方法：使用“chown” “chmod”命令赋予mysql所有者及权限</p>
+<p>  7.selinux惹的祸，如果是centos系统，默认会开启selinux<br>  解决方法：关闭它，打开/etc/selinux/config，把SELINUX=enforcing改为SELINUX=disabled后存盘退出重启机器试试。</p>
+</blockquote>
+
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/网站建设/">网站建设</a>
     </div>
 
 
@@ -867,10 +873,10 @@ a表示添加文件到压缩包， -r表示递归处理文件夹，默认为7z�
 
 
   
-    <article id="post-e8-a7-a3-e5-86-b3mysql-e9-87-8d-e5-90-af-e9-94-99-e8-af-af-e6-8f-90-e7-a4-ba-the-server-quit-without-updating-pid-file" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-e6-97-b6-e9-92-9f-e6-8a-96-e5-8a-a8-ef-bc-88clock-jitter-ef-bc-89-e5-92-8c-e6-97-b6-e9-92-9f-e5-81-8f-e7-a7-bb-ef-bc-88clock-skew-ef-bc-89-e7-9a-84-e5-ae-9a-e4-b9-89-ef-bc-8c-e5-8f-8a-e5-85-b6" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2015/06/25/e8-a7-a3-e5-86-b3mysql-e9-87-8d-e5-90-af-e9-94-99-e8-af-af-e6-8f-90-e7-a4-ba-the-server-quit-without-updating-pid-file/" class="article-date">
+      <a href="/2015/06/25/e6-97-b6-e9-92-9f-e6-8a-96-e5-8a-a8-ef-bc-88clock-jitter-ef-bc-89-e5-92-8c-e6-97-b6-e9-92-9f-e5-81-8f-e7-a7-bb-ef-bc-88clock-skew-ef-bc-89-e7-9a-84-e5-ae-9a-e4-b9-89-ef-bc-8c-e5-8f-8a-e5-85-b6/" class="article-date">
       <time datetime="2015-06-25T08:38:04.000Z" itemprop="datePublished">2015-06-25</time>
 </a>
     </div>
@@ -884,7 +890,7 @@ a表示添加文件到压缩包， -r表示递归处理文件夹，默认为7z�
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2015/06/25/e8-a7-a3-e5-86-b3mysql-e9-87-8d-e5-90-af-e9-94-99-e8-af-af-e6-8f-90-e7-a4-ba-the-server-quit-without-updating-pid-file/">解决MYSQL重启错误提示 The server quit without updating PID file(…)</a>
+      <a class="article-title" href="/2015/06/25/e6-97-b6-e9-92-9f-e6-8a-96-e5-8a-a8-ef-bc-88clock-jitter-ef-bc-89-e5-92-8c-e6-97-b6-e9-92-9f-e5-81-8f-e7-a7-bb-ef-bc-88clock-skew-ef-bc-89-e7-9a-84-e5-ae-9a-e4-b9-89-ef-bc-8c-e5-8f-8a-e5-85-b6/">时钟抖动（*clock jitter*）和时钟偏移（*clock skew*）的定义，及其对时序的影响</a>
     </h1>
   
 
@@ -895,21 +901,15 @@ a表示添加文件到压缩包， -r表示递归处理文件夹，默认为7z�
       
           
         <hr>
-<p><a href="/uploads/2015/06/lnmp.png"><img src="/uploads/2015/06/lnmp-300x200.png" alt="lnmp"></a></p>
-<ul>
-<li>首先改etc目录下my.cnf的max_connections为100。（执行这一步行已能重启，但仍有错误“ERROR! MySQL server PID file could not be found!”）</li>
-<li>输入chmod -R 755 /usr/local/mysql/data（执行这一步后没有任何错误提示）</li>
-<li>仍然不行，则试参考以下手段：</li>
-</ul>
-<blockquote>
-<p>1.可能是/usr/local/mysql/data/rekfan.pid文件没有写的权限<br>  解决方法 ：给予权限，执行 “chown -R mysql:mysql /var/data” “chmod -R 755 /usr/local/mysql/data”  然后重新启动mysqld！</p>
-<p>  2.可能进程里已经存在mysql进程<br>  解决方法：用命令“ps -ef|grep mysqld”查看是否有mysqld进程，如果有使用“kill -9  进程号”杀死，然后重新启动mysqld！</p>
-<p>  3.可能是第二次在机器上安装mysql，有残余数据影响了服务的启动。<br>  解决方法：去mysql的数据目录/data看看，如果存在mysql-bin.index，就赶快把它删除掉吧，它就是罪魁祸首了。本人就是使用第三条方法解决的 ！</p>
-<p>  4.mysql在启动时没有指定配置文件时会使用etc目录下my.cnf配置文件，请打开这个文件查看在[mysqld]节下有没有指定数据目录(datadir)。<br>  解决方法：请在[mysqld]下设置这一行：datadir = /usr/local/mysql/data</p>
-<p>  5.skip-federated字段问题<br>  解决方法：检查一下etc目录下my.cnf文件中有没有没被注释掉的skip-federated字段，如果有就立即注释掉吧。</p>
-<p>  6.错误日志目录不存在<br>  解决方法：使用“chown” “chmod”命令赋予mysql所有者及权限</p>
-<p>  7.selinux惹的祸，如果是centos系统，默认会开启selinux<br>  解决方法：关闭它，打开/etc/selinux/config，把SELINUX=enforcing改为SELINUX=disabled后存盘退出重启机器试试。</p>
+<p>参考链接：<br><a href="http://en.wikipedia.org/wiki/Clock_skew#Confusion_between_clock_skew_and_clock_jitter" target="_blank" rel="external">http://en.wikipedia.org/wiki/Clock_skew#Confusion_between_clock_skew_and_clock_jitter</a><br><a href="http://www.eetop.cn/blog/html/14/56214-26659.html" target="_blank" rel="external">http://www.eetop.cn/blog/html/14/56214-26659.html</a><br><a href="http://electronicsgurukulam.blogspot.hk/2012/11/clock-skew-and-jitter-in-digital.html" target="_blank" rel="external">http://electronicsgurukulam.blogspot.hk/2012/11/clock-skew-and-jitter-in-digital.html</a><br><a href="http://www.wildpackets.com/resources/compendium/wireless_lan/signal_characteristics" target="_blank" rel="external">http://www.wildpackets.com/resources/compendium/wireless_lan/signal_characteristics</a></p>
+<h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><ul>
+<li><strong>时钟抖动（<em>clock jitter</em>）</strong>——是指多个时钟周期之间存在的差值（如上图），这个误差是在时钟发生器内部产生的，和晶振或者PLL内部电路有关，布线对其没有影响。除此之外，还有一种由于周期内信号的占空比发生变化而引起的抖 动，称之为半周期抖动。总的来说，jitter可以认为在时钟信号本身在传输过程中的一些偶然和不定的变化之总和。<br><img src="/uploads/2015/06/clk_jitter.bmp" alt=""></li>
+<li><strong>时钟偏移（<em>clock skew</em>）</strong>——是指同样的时钟产生的多个子时钟信号之间的延时差异(如上图)。它表现的形式是多种多样的，既包含了时钟驱动器的多个输出之间的偏移，也包含了由于PCB走线误差造成的接收端和驱动端时钟信号之间的偏移。<br>信号完整性对时序的影响，比如串扰会影响微带线传播延迟；反射会造成数据信号在逻辑门限附近波动，从而影响最大/最 小飞行时间；时钟走线的干扰会造成一定的时钟偏移。有些误差或不确定因素是仿真中无法预见的，设计者只有通过周密的思考和实际经验的积累来逐步提高系统设计的水平。<br><img src="/uploads/2015/06/clk_skew.bmp" alt=""><blockquote>
+<p>Clock Skew: The spatial variation in arrival time of a clock transition on an integrated circuit;<br>Clock jitter: The temporal vatiation of the clock period at a given point on the chip;<br><strong>简言之，skew通常是时钟相位上的不确定，而jitter是指时钟频率上的不确定（uncertainty)。由于时钟源到达不同寄存器所经历路径的驱动和负载的不同，时钟边沿的位置有所差异，因此就带来了<br>skew。而由于晶振本身稳定性，电源以及温度变化等原因造成了时钟频率的变化，就是jitter。</strong></p>
 </blockquote>
+</li>
+</ul>
+<h3 id="对时序的影响"><a href="#对时序的影响" class="headerlink" title="对时序的影响"></a>对时序的影响</h3><p>skew和jitter对电路的影响可以用一个简单的时间模型来解释。假设下图中t(c-q)代表寄存器的最大输出延迟，<br>t(c-q, cd)表示最大输出延时；t(su)和t(hold)分别代表寄存器的setup, hold time（暂不考虑p.v.t）差异；t(logic)<br>和t(logic, cd)分别表示最大的组合逻辑传输延迟和最小组合逻辑传输延迟；<br><img src="/uploads/2015/06/clk_skew_jitter_timing.bmp" alt=""><br>在不考虑skew和jitter的情况下，及t(clk1)和t(clk2)同频同相时，时钟周期T和t(hold)需要满足<br>                  T &gt; t(c-q) + t(logic) + t(su)<br>                  t(hold) &lt; t(c-q, cd) + t(logic, cd)<br>这样才能保证电路的功能正常，且避免竞争的发生。如果考虑CLK2比CLK1晚t1的相位，及skew=t1。则<br>                  t(hold) &lt; t(c-q, cd) + t(logic, cd) - t1<br>这意味着电路由更大的倾向发生hold time violation；如果考虑CLK1比CLK2晚t2的相位，及skew=-t2，则<br>                  T &gt; t(c-q) + t(logic) + t(su) + t2<br>这意味着电路的性能下降了，但由于R2的hold time始终满足，所以不会有竞争的麻烦存在。clock jitter始终是对性能造成负面的影响，一般设计中都需要专门留取10%左右的margin来保证。<br>                  clock uncertainty = clock jitter + clock skew<br>jitter 是 由时钟源产生的抖动。skew是时钟树不平衡引起的到达两个寄存器的延迟差。在cts之后,skew由工具算出，因此sta的时候clock uncertainty 可以设一个比较小的值。另外做hold check的时候因为检查的是同一个时钟沿，因此没有jitter只有skew.</p>
 
       
     </div>
@@ -918,7 +918,7 @@ a表示添加文件到压缩包， -r表示递归处理文件夹，默认为7z�
       
       
     <div class="article-category tagcloud">
-    <a class="article-category-link" href="/categories/网站建设/">网站建设</a>
+    <a class="article-category-link" href="/categories/FPGA/">FPGA</a>
     </div>
 
 
@@ -966,7 +966,7 @@ a表示添加文件到压缩包， -r表示递归处理文件夹，默认为7z�
 
     <script>
         $(document).ready(function() {
-            var backgroundnum = 24;
+            var backgroundnum = 17;
             var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
             $("#mobile-nav").css({"background-image": backgroundimg,"background-size": "cover","background-position": "center"});
             $(".left-col").css({"background-image": backgroundimg,"background-size": "cover","background-position": "center"});
@@ -975,6 +975,27 @@ a表示添加文件到压缩包， -r表示递归处理文件夹，默认为7z�
 
 
 
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
 
 
 <div class="scroll" id="scroll">
